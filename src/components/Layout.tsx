@@ -8,19 +8,21 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { auth } from '../firebase';
 
 export const Layout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
-    // Check authentication
-    const isLoggedIn = localStorage.getItem('bm_is_logged_in');
-    if (isLoggedIn !== 'true') {
+ useEffect(() => {
+  const unsubscribe = auth.onAuthStateChanged((user) => {
+    if (!user) {
       navigate('/login');
     }
-  }, [navigate, location.pathname]);
+  });
+  return () => unsubscribe();
+}, [navigate]);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
