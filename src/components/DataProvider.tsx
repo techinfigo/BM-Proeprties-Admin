@@ -1,17 +1,16 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Property, FeaturedSpotlight, PopularProperty, Testimonial, ContactInfo, SiteStats } from '../types';
 import {
-  initialProperties,
-  initialFeaturedSpotlight,
-  initialPopularProperties,
-  initialTestimonials,
-  initialContactInfo,
-  initialSiteStats
+  collection, doc, getDocs, addDoc, updateDoc,
+  deleteDoc, setDoc, getDoc, onSnapshot
+} from 'firebase/firestore';
+import { db } from '../firebase';
+import {
+  Property, FeaturedSpotlight, PopularProperty,
+  Testimonial, ContactInfo, SiteStats
+} from '../types';
+import {
+  initialFeaturedSpotlight, initialPopularProperties,
+  initialContactInfo, initialSiteStats
 } from '../data/mockData';
 
 interface DataContextType {
@@ -21,161 +20,131 @@ interface DataContextType {
   testimonials: Testimonial[];
   contactInfo: ContactInfo;
   siteStats: SiteStats;
-  addProperty: (property: Omit<Property, 'id' | 'createdAt'>) => void;
-  updateProperty: (id: string, property: Partial<Property>) => void;
-  deleteProperty: (id: string) => void;
-  updateFeaturedSpotlight: (spotlight: FeaturedSpotlight) => void;
-  updatePopularProperties: (properties: PopularProperty[]) => void;
-  addTestimonial: (testimonial: Omit<Testimonial, 'id'>) => void;
-  updateTestimonial: (id: string, testimonial: Partial<Testimonial>) => void;
-  deleteTestimonial: (id: string) => void;
-  updateContactInfo: (info: ContactInfo) => void;
-  updateSiteStats: (stats: SiteStats) => void;
+  loading: boolean;
+  addProperty: (property: Omit<Property, 'id' | 'createdAt'>) => Promise<void>;
+  updateProperty: (id: string, property: Partial<Property>) => Promise<void>;
+  deleteProperty: (id: string) => Promise<void>;
+  updateFeaturedSpotlight: (spotlight: FeaturedSpotlight) => Promise<void>;
+  updatePopularProperties: (properties: PopularProperty[]) => Promise<void>;
+  addTestimonial: (testimonial: Omit<Testimonial, 'id'>) => Promise<void>;
+  updateTestimonial: (id: string, testimonial: Partial<Testimonial>) => Promise<void>;
+  deleteTestimonial: (id: string) => Promise<void>;
+  updateContactInfo: (info: ContactInfo) => Promise<void>;
+  updateSiteStats: (stats: SiteStats) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-export function useData() {
+export const useData = () => {
   const context = useContext(DataContext);
-  if (!context) {
-    throw new Error('useData must be used within a DataProvider');
-  }
+  if (!context) throw new Error('useData must be used within DataProvider');
   return context;
-}
+};
 
-interface DataProviderProps {
-  children: React.ReactNode;
-}
-
-export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
-  const [properties, setProperties] = useState<Property[]>(() => {
-    const saved = localStorage.getItem('bm_properties');
-    return saved ? JSON.parse(saved) : initialProperties;
-  });
-
-  const [featuredSpotlight, setFeaturedSpotlight] = useState<FeaturedSpotlight>(() => {
-    const saved = localStorage.getItem('bm_featured_spotlight');
-    return saved ? JSON.parse(saved) : initialFeaturedSpotlight;
-  });
-
-  const [popularProperties, setPopularProperties] = useState<PopularProperty[]>(() => {
-    const saved = localStorage.getItem('bm_popular_properties');
-    return saved ? JSON.parse(saved) : initialPopularProperties;
-  });
-
-  const [testimonials, setTestimonials] = useState<Testimonial[]>(() => {
-    const saved = localStorage.getItem('bm_testimonials');
-    return saved ? JSON.parse(saved) : initialTestimonials;
-  });
-
-  const [contactInfo, setContactInfo] = useState<ContactInfo>(() => {
-    const saved = localStorage.getItem('bm_contact_info');
-    return saved ? JSON.parse(saved) : initialContactInfo;
-  });
-
-  const [siteStats, setSiteStats] = useState<SiteStats>(() => {
-    const saved = localStorage.getItem('bm_site_stats');
-    return saved ? JSON.parse(saved) : initialSiteStats;
-  });
-
-  // Sync to localStorage
-  useEffect(() => {
-    localStorage.setItem('bm_properties', JSON.stringify(properties));
-  }, [properties]);
+export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [featuredSpotlight, setFeaturedSpotlight] = useState<FeaturedSpotlight>(initialFeaturedSpotlight);
+  const [popularProperties, setPopularProperties] = useState<PopularProperty[]>(initialPopularProperties);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [contactInfo, setContactInfo] = useState<ContactInfo>(initialContactInfo);
+  const [siteStats, setSiteStats] = useState<SiteStats>(initialSiteStats);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    localStorage.setItem('bm_featured_spotlight', JSON.stringify(featuredSpotlight));
-  }, [featuredSpotlight]);
+    // Listen to properties in real-time
+    const unsubProperties = onSnapshot(collection(db, 'properties'), (snap) => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as Property));
+      setProperties(data);
+    });
 
-  useEffect(() => {
-    localStorage.setItem('bm_popular_properties', JSON.stringify(popularProperties));
-  }, [popularProperties]);
+    // Listen to testimonials in real-time
+    const unsubTestimonials = onSnapshot(collection(db, 'testimonials'), (snap) => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as Testimonial));
+      setTestimonials(data);
+    });
 
-  useEffect(() => {
-    localStorage.setItem('bm_testimonials', JSON.stringify(testimonials));
-  }, [testimonials]);
+    // Load single documents
+    const loadSingleDocs = async () => {
+      try {
+        const [spotSnap, popSnap, contactSnap, statsSnap] = await Promise.all([
+          getDoc(doc(db, 'siteConfig', 'featuredSpotlight')),
+          getDoc(doc(db, 'siteConfig', 'popularProperties')),
+          getDoc(doc(db, 'siteConfig', 'contactInfo')),
+          getDoc(doc(db, 'siteConfig', 'siteStats')),
+        ]);
 
-  useEffect(() => {
-    localStorage.setItem('bm_contact_info', JSON.stringify(contactInfo));
-  }, [contactInfo]);
-
-  useEffect(() => {
-    localStorage.setItem('bm_site_stats', JSON.stringify(siteStats));
-  }, [siteStats]);
-
-  const addProperty = (newProp: Omit<Property, 'id' | 'createdAt'>) => {
-    const id = `prop-${Date.now()}`;
-    const createdAt = new Date().toISOString().split('T')[0];
-    const propertyWithId: Property = {
-      ...newProp,
-      id,
-      createdAt
+        if (spotSnap.exists()) setFeaturedSpotlight(spotSnap.data() as FeaturedSpotlight);
+        if (popSnap.exists()) setPopularProperties(popSnap.data().items as PopularProperty[]);
+        if (contactSnap.exists()) setContactInfo(contactSnap.data() as ContactInfo);
+        if (statsSnap.exists()) setSiteStats(statsSnap.data() as SiteStats);
+      } catch (err) {
+        console.error('Error loading config:', err);
+      } finally {
+        setLoading(false);
+      }
     };
-    setProperties((prev) => [propertyWithId, ...prev]);
+
+    loadSingleDocs();
+    return () => {
+      unsubProperties();
+      unsubTestimonials();
+    };
+  }, []);
+
+  const addProperty = async (newProp: Omit<Property, 'id' | 'createdAt'>) => {
+    const createdAt = new Date().toISOString().split('T')[0];
+    await addDoc(collection(db, 'properties'), { ...newProp, createdAt });
   };
 
-  const updateProperty = (id: string, updatedFields: Partial<Property>) => {
-    setProperties((prev) =>
-      prev.map((prop) => (prop.id === id ? { ...prop, ...updatedFields } : prop))
-    );
+  const updateProperty = async (id: string, updatedFields: Partial<Property>) => {
+    await updateDoc(doc(db, 'properties', id), updatedFields);
   };
 
-  const deleteProperty = (id: string) => {
-    setProperties((prev) => prev.filter((prop) => prop.id !== id));
+  const deleteProperty = async (id: string) => {
+    await deleteDoc(doc(db, 'properties', id));
   };
 
-  const updateFeaturedSpotlight = (spotlight: FeaturedSpotlight) => {
+  const updateFeaturedSpotlight = async (spotlight: FeaturedSpotlight) => {
+    await setDoc(doc(db, 'siteConfig', 'featuredSpotlight'), spotlight);
     setFeaturedSpotlight(spotlight);
   };
 
-  const updatePopularProperties = (props: PopularProperty[]) => {
+  const updatePopularProperties = async (props: PopularProperty[]) => {
+    await setDoc(doc(db, 'siteConfig', 'popularProperties'), { items: props });
     setPopularProperties(props);
   };
 
-  const addTestimonial = (newTest: Omit<Testimonial, 'id'>) => {
-    const id = `test-${Date.now()}`;
-    setTestimonials((prev) => [{ ...newTest, id }, ...prev]);
+  const addTestimonial = async (newTest: Omit<Testimonial, 'id'>) => {
+    await addDoc(collection(db, 'testimonials'), newTest);
   };
 
-  const updateTestimonial = (id: string, updatedFields: Partial<Testimonial>) => {
-    setTestimonials((prev) =>
-      prev.map((test) => (test.id === id ? { ...test, ...updatedFields } : test))
-    );
+  const updateTestimonial = async (id: string, updatedFields: Partial<Testimonial>) => {
+    await updateDoc(doc(db, 'testimonials', id), updatedFields);
   };
 
-  const deleteTestimonial = (id: string) => {
-    setTestimonials((prev) => prev.filter((test) => test.id !== id));
+  const deleteTestimonial = async (id: string) => {
+    await deleteDoc(doc(db, 'testimonials', id));
   };
 
-  const updateContactInfo = (info: ContactInfo) => {
+  const updateContactInfo = async (info: ContactInfo) => {
+    await setDoc(doc(db, 'siteConfig', 'contactInfo'), info);
     setContactInfo(info);
   };
 
-  const updateSiteStats = (stats: SiteStats) => {
+  const updateSiteStats = async (stats: SiteStats) => {
+    await setDoc(doc(db, 'siteConfig', 'siteStats'), stats);
     setSiteStats(stats);
   };
 
   return (
-    <DataContext.Provider
-      value={{
-        properties,
-        featuredSpotlight,
-        popularProperties,
-        testimonials,
-        contactInfo,
-        siteStats,
-        addProperty,
-        updateProperty,
-        deleteProperty,
-        updateFeaturedSpotlight,
-        updatePopularProperties,
-        addTestimonial,
-        updateTestimonial,
-        deleteTestimonial,
-        updateContactInfo,
-        updateSiteStats
-      }}
-    >
+    <DataContext.Provider value={{
+      properties, featuredSpotlight, popularProperties,
+      testimonials, contactInfo, siteStats, loading,
+      addProperty, updateProperty, deleteProperty,
+      updateFeaturedSpotlight, updatePopularProperties,
+      addTestimonial, updateTestimonial, deleteTestimonial,
+      updateContactInfo, updateSiteStats
+    }}>
       {children}
     </DataContext.Provider>
   );
