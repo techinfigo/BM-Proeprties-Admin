@@ -1,0 +1,6 @@
+{
+  "name": "BM Properties Admin Panel",
+  "description": "Premium real estate admin panel for BM Properties in Agra, Uttar Pradesh. Manage properties, featured spotlight, popular cards, testimonials, site stats, and contact information.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
