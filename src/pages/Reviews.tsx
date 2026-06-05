@@ -15,7 +15,7 @@ interface Review {
   email: string;
   rating: number;
   reviewText: string;
-  status: string;
+  status?: string;
   createdAt?: { seconds: number } | string | null;
 }
 
@@ -64,23 +64,33 @@ function StarRating({ rating }: { rating: number }) {
 export const Reviews: React.FC = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { showToast } = useToast();
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'reviews'), (snap) => {
-      const data = snap.docs
-        .map((d) => ({ id: d.id, ...(d.data() as Omit<Review, 'id'>) }))
-        .sort((a, b) => {
-          const getTs = (r: Review) => {
-            if (!r.createdAt) return 0;
-            if (typeof r.createdAt === 'object' && 'seconds' in r.createdAt) return r.createdAt.seconds;
-            return 0;
-          };
-          return getTs(b) - getTs(a);
-        });
-      setReviews(data);
-      setLoading(false);
-    });
+    const unsub = onSnapshot(
+      collection(db, 'reviews'),
+      (snap) => {
+        const data = snap.docs
+          .map((d) => ({ id: d.id, ...(d.data() as Omit<Review, 'id'>) }))
+          .sort((a, b) => {
+            const getTs = (r: Review) => {
+              if (!r.createdAt) return 0;
+              if (typeof r.createdAt === 'object' && 'seconds' in r.createdAt) return r.createdAt.seconds;
+              return 0;
+            };
+            return getTs(b) - getTs(a);
+          });
+        setReviews(data);
+        setError(null);
+        setLoading(false);
+      },
+      (err) => {
+        console.error('[Reviews] Firestore error:', err.code, err.message);
+        setError(`Could not load reviews: ${err.message}`);
+        setLoading(false);
+      }
+    );
     return () => unsub();
   }, []);
 
@@ -112,7 +122,7 @@ export const Reviews: React.FC = () => {
     }
   };
 
-  const pendingCount = reviews.filter((r) => r.status !== 'approved' && r.status !== 'rejected').length;
+  const pendingCount = reviews.filter((r) => (r.status ?? 'pending') !== 'approved' && (r.status ?? 'pending') !== 'rejected').length;
 
   return (
     <div className="space-y-6">
@@ -138,6 +148,11 @@ export const Reviews: React.FC = () => {
           <div className="flex items-center justify-center py-24 text-slate-400">
             <span className="animate-spin mr-2">⏳</span> Loading reviews…
           </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-24 text-red-500 gap-3">
+            <p className="text-sm font-semibold">Failed to load reviews</p>
+            <p className="text-xs text-slate-400 max-w-sm text-center">{error}</p>
+          </div>
         ) : reviews.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-slate-400 gap-3">
             <StarOff className="w-10 h-10 opacity-40" />
@@ -159,9 +174,10 @@ export const Reviews: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {reviews.map((review) => {
-                  const badge = statusBadge(review.status);
-                  const isPending = review.status !== 'approved' && review.status !== 'rejected';
-                  const isApproved = review.status === 'approved';
+                  const status = review.status ?? 'pending';
+                  const badge = statusBadge(status);
+                  const isPending = status !== 'approved' && status !== 'rejected';
+                  const isApproved = status === 'approved';
 
                   return (
                     <tr key={review.id} className="hover:bg-slate-50/70 transition-colors">
@@ -220,7 +236,7 @@ export const Reviews: React.FC = () => {
                               Reject
                             </button>
                           )}
-                          {review.status === 'rejected' && (
+                          {status === 'rejected' && (
                             <button
                               onClick={() => approveReview(review.id)}
                               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors text-xs font-semibold"
