@@ -13,6 +13,7 @@ interface Review {
   id: string;
   name: string;
   email: string;
+  propertyTitle?: string;
   rating: number;
   reviewText: string;
   status?: string;
@@ -165,6 +166,7 @@ export const Reviews: React.FC = () => {
                 <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   <th className="px-4 py-3 text-left">Name</th>
                   <th className="px-4 py-3 text-left">Email</th>
+                  <th className="px-4 py-3 text-left">Property</th>
                   <th className="px-4 py-3 text-left">Rating</th>
                   <th className="px-4 py-3 text-left">Review</th>
                   <th className="px-4 py-3 text-left">Status</th>
@@ -186,6 +188,9 @@ export const Reviews: React.FC = () => {
                       </td>
                       <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">
                         {review.email || '—'}
+                      </td>
+                      <td className="px-4 py-3 text-slate-700 text-xs whitespace-nowrap max-w-[180px]">
+                        <span className="line-clamp-1 block">{review.propertyTitle || '—'}</span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <StarRating rating={review.rating || 0} />
