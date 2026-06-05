@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Home,
@@ -15,9 +15,13 @@ import {
   BarChart3,
   LogOut,
   X,
-  Sparkles
+  Sparkles,
+  Inbox,
+  Settings
 } from 'lucide-react';
 import { useToast } from './Toast';
+import { db } from '../firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -26,17 +30,44 @@ interface SidebarProps {
 
 const navItems = [
   { name: 'Dashboard', path: '/', icon: Home },
+  { name: 'Inquiries', path: '/inquiries', icon: Inbox },
   { name: 'Properties', path: '/properties', icon: Building2 },
-  { name: 'Featured Spotlight', path: '/featured-spotlight', icon: Star },
+  { name: 'Reviews', path: '/reviews', icon: Star },
+  { name: 'Featured Spotlight', path: '/featured-spotlight', icon: Sparkles },
   { name: 'Popular Properties', path: '/popular-properties', icon: Heart },
   { name: 'Testimonials', path: '/testimonials', icon: MessageSquare },
   { name: 'Contact & Info', path: '/contact-info', icon: Phone },
-  { name: 'Site Stats', path: '/site-stats', icon: BarChart3 }
+  { name: 'Site Stats', path: '/site-stats', icon: BarChart3 },
+  { name: 'Site Settings', path: '/site-settings', icon: Settings }
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const [pendingCount, setPendingCount] = useState(0);
+  const [pendingReviewsCount, setPendingReviewsCount] = useState(0);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'inquiries'), (snap) => {
+      const count = snap.docs.filter((d) => {
+        const s = d.data().status;
+        return !['contacted', 'approved', 'rejected'].includes(s);
+      }).length;
+      setPendingCount(count);
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'reviews'), (snap) => {
+      const count = snap.docs.filter((d) => {
+        const s = d.data().status;
+        return s !== 'approved' && s !== 'rejected';
+      }).length;
+      setPendingReviewsCount(count);
+    });
+    return () => unsub();
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('bm_is_logged_in');
@@ -119,7 +150,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 end={item.path === '/'}
               >
                 <Icon className="w-4.5 h-4.5 flex-shrink-0 transition-transform group-hover:scale-110" />
-                <span>{item.name}</span>
+                <span className="flex-1">{item.name}</span>
+                {item.path === '/inquiries' && pendingCount > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold bg-red-500 text-white">
+                    {pendingCount}
+                  </span>
+                )}
+                {item.path === '/reviews' && pendingReviewsCount > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold bg-orange-500 text-white">
+                    {pendingReviewsCount}
+                  </span>
+                )}
               </NavLink>
             );
           })}
