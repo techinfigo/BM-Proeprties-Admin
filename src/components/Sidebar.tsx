@@ -111,21 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        {/* Navigation Admin Role Profile */}
-        <div className="px-6 py-4 bg-slate-900/40 border-b border-slate-700/30 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-[#0ea5e9] flex items-center justify-center font-bold text-sm text-white">
-            BM
-          </div>
-          <div>
-            <h4 className="text-xs font-semibold text-slate-200">BM Properties Admin</h4>
-            <div className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
-              <span className="text-[10px] text-[#10b981] font-medium">Online Console</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Nav Links */}
+{/* Nav Links */}
         <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
