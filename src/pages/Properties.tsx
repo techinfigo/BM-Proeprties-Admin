@@ -11,7 +11,6 @@ import {
   Pencil,
   Trash2,
   Building2,
-  Star,
   Heart,
   MapPin,
   Filter,
@@ -114,14 +113,6 @@ export const Properties: React.FC = () => {
     }
     setSelectedIds(new Set());
     showToast(`${count} ${count === 1 ? 'property' : 'properties'} deleted successfully.`, 'success');
-  };
-
-  const handleToggleFeatured = (id: string, currentStatus: boolean, title: string) => {
-    updateProperty(id, { isFeatured: !currentStatus });
-    showToast(
-      `"${title}" is now ${!currentStatus ? 'Featured' : 'removed from Featured'}.`,
-      'success'
-    );
   };
 
   const handleTogglePopular = (id: string, currentStatus: boolean, title: string) => {
@@ -300,7 +291,6 @@ export const Properties: React.FC = () => {
                     <th className="px-4 py-3 whitespace-nowrap">Type / Deal</th>
                     <th className="px-4 py-3 whitespace-nowrap">Asking Price</th>
                     <th className="px-4 py-3 whitespace-nowrap">Badges</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Featured</th>
                     <th className="px-4 py-3 whitespace-nowrap">Popular</th>
                     <th className="px-4 py-3 text-center whitespace-nowrap sticky right-0 bg-slate-50 z-10">Controls</th>
                   </tr>
@@ -400,22 +390,6 @@ export const Properties: React.FC = () => {
                               });
                             })()}
                           </div>
-                        </td>
-
-                        {/* Featured toggle */}
-                        <td className="px-4 py-3">
-                          <button
-                            onClick={() => handleToggleFeatured(prop.id, prop.isFeatured, prop.title)}
-                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all border whitespace-nowrap ${
-                              prop.isFeatured
-                                ? 'bg-[#f59e0b]/15 text-[#f59e0b] border-[#f59e0b]/30 shadow-xs'
-                                : 'bg-slate-50 text-slate-400 border-slate-200/60 hover:bg-slate-100 hover:text-slate-600'
-                            }`}
-                            title="Toggle Featured Status"
-                          >
-                            <Star className={`w-3 h-3 ${prop.isFeatured ? 'fill-[#f59e0b]' : ''}`} />
-                            <span>{prop.isFeatured ? 'Yes' : 'No'}</span>
-                          </button>
                         </td>
 
                         {/* Popular toggle */}
