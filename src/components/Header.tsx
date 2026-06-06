@@ -16,11 +16,12 @@ const routeTitles: Record<string, string> = {
   '/': 'Console Dashboard',
   '/properties': 'Properties Manager',
   '/properties/new': 'Add New Property',
-  '/featured-spotlight': 'Featured Spotlight Controller',
-  '/popular-properties': 'Popular Cards Controller',
   '/testimonials': 'Customer Testimonials Manager',
   '/contact-info': 'Contact Details & Info Updater',
-  '/site-stats': 'Website Statistics Stats'
+  '/site-stats': 'Website Statistics Stats',
+  '/inquiries': 'Inquiries Manager',
+  '/site-settings': 'Site Settings',
+  '/reviews': 'Reviews Manager'
 };
 
 export const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
@@ -34,7 +35,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
     if (path.startsWith('/properties/edit/')) {
       return 'Update Property Details';
     }
-    return routeTitles[path] || 'BM Properties Admin';
+    return routeTitles[path] || 'Admin Panel';
   };
 
   const notificationCount = 3;
