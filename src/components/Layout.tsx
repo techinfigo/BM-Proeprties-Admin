@@ -33,14 +33,14 @@ export const Layout: React.FC = () => {
   };
 
   return (
-    <div className="h-screen bg-[#f1f5f9] flex overflow-hidden">
+    <div className="min-h-screen bg-[#f1f5f9] flex">
       {/* Sidebar navigation */}
       <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
 
       {/* Main space */}
-      <div className="flex-1 min-h-0 flex flex-col lg:pl-64 overflow-hidden transition-all duration-300">
-        {/* Mobile-only sidebar toggle */}
-        <div className="lg:hidden px-4 pt-4">
+      <div className="flex-1 flex flex-col lg:pl-64 transition-all duration-300">
+        {/* Mobile-only sidebar toggle — sticky so it stays reachable when scrolling */}
+        <div className="lg:hidden sticky top-0 z-30 bg-[#f1f5f9] px-4 pt-4 pb-2">
           <button
             onClick={toggleSidebar}
             className="p-2 rounded-lg text-slate-500 hover:bg-slate-200 transition-colors"
@@ -51,7 +51,7 @@ export const Layout: React.FC = () => {
         </div>
 
         {/* Content outlet wrapper */}
-        <main className="flex-1 min-h-0 overflow-y-auto p-6 md:p-8 w-full">
+        <main className="flex-1 p-6 md:p-8 w-full">
           <div className="max-w-7xl mx-auto w-full">
             <motion.div
               key={location.pathname}
