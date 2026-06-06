@@ -38,7 +38,7 @@ export const Layout: React.FC = () => {
       <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
 
       {/* Main space */}
-      <div className="flex-1 flex flex-col lg:pl-64 overflow-hidden transition-all duration-300">
+      <div className="flex-1 min-h-0 flex flex-col lg:pl-64 overflow-hidden transition-all duration-300">
         {/* Mobile-only sidebar toggle */}
         <div className="lg:hidden px-4 pt-4">
           <button
@@ -51,7 +51,7 @@ export const Layout: React.FC = () => {
         </div>
 
         {/* Content outlet wrapper */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 w-full">
+        <main className="flex-1 min-h-0 overflow-y-auto p-6 md:p-8 w-full">
           <div className="max-w-7xl mx-auto w-full">
             <motion.div
               key={location.pathname}
