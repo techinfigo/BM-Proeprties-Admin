@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useState, useTransition } from 'react';
+import React, { useEffect, useRef, useState, useTransition } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import {
@@ -12,14 +12,20 @@ import {
   Plus,
   Image as ImageIcon,
   Building,
-  Info,
   Calendar,
   Layers,
   Settings,
   Sparkles,
   Smartphone,
-  Check
+  Zap,
+  MapPin,
+  Video,
+  CloudUpload,
+  Link as LinkIcon,
+  FolderOpen
 } from 'lucide-react';
+import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { storage } from '../firebase';
 import { useData } from '../components/DataProvider';
 import { useToast } from '../components/Toast';
 import { Property } from '../types';
@@ -27,7 +33,7 @@ import { Property } from '../types';
 interface PropertyFormInputs {
   title: string;
   slug: string;
-  locality: 'Tajganj' | 'Kamla Nagar' | 'Sikandra' | 'Fatehabad Road' | 'Shahganj' | 'Bodla' | 'Belanganj' | 'Agra Cantt';
+  locality: string;
   address: string;
   description: string;
   transaction: 'Buy' | 'Rent';
@@ -40,8 +46,38 @@ interface PropertyFormInputs {
   possession: 'Ready' | 'Under Construction';
   postedBy: 'Owner' | 'Agent';
   whatsappNumber: string;
-  isFeatured: boolean;
   createdAt: string;
+  // Property Features
+  floorNumber?: number;
+  totalFloors?: number;
+  furnishing?: 'Unfurnished' | 'Semi-Furnished' | 'Fully Furnished';
+  ceilingHeight?: number;
+  constructionYear?: number;
+  renovationStatus?: 'Original' | 'Recent Polish-ups' | 'Fully Renovated';
+  additionalSpace?: string;
+  // Utilities
+  heating?: 'Not Applicable' | 'Central Heating' | 'Gas Heating';
+  airConditioning?: 'Not Available' | 'Split AC Wiring Ready' | 'Fully Installed';
+  fireplace?: boolean;
+  elevatorAccess?: 'No Elevator' | 'Private Staircase Only' | 'Shared Elevator' | 'Private Elevator';
+  ventilation?: 'Standard' | 'Fully Cross Ventilated';
+  intercom?: 'Not Available' | 'Gate Ring Doorbell' | 'Full Intercom System';
+  windowModel?: string;
+  cableTV?: string;
+  internetWifi?: string;
+  // Outdoor Features
+  privateGarage?: string;
+  gardenBackyard?: string;
+  swimmingPool?: string;
+  visitorParking?: string;
+  disabledAccess?: string;
+  fencingBoundary?: string;
+  cctvCameras?: string;
+  petFriendly?: boolean;
+  // Media
+  videoWalkthroughUrl?: string;
+  virtualTourUrl?: string;
+  floorPlanImageUrl?: string;
 }
 
 const COMMON_AMENITIES = [
@@ -56,14 +92,22 @@ const COMMON_AMENITIES = [
 ];
 
 const LOCALITY_OPTIONS = [
-  'Tajganj',
-  'Kamla Nagar',
-  'Sikandra',
-  'Fatehabad Road',
-  'Shahganj',
-  'Bodla',
-  'Belanganj',
-  'Agra Cantt'
+  'Tajganj, Agra',
+  'Kamla Nagar, Agra',
+  'Sikandra, Agra',
+  'Fatehabad Road, Agra',
+  'Shahganj, Agra',
+  'Bodla, Agra',
+  'Belanganj, Agra',
+  'Agra Cantt, Agra',
+  'Delhi',
+  'Noida',
+  'Gurgaon',
+  'Greater Noida',
+  'Mathura',
+  'Vrindavan',
+  'Firozabad',
+  'Aligarh'
 ];
 
 export const PropertyForm: React.FC = () => {
@@ -79,7 +123,12 @@ export const PropertyForm: React.FC = () => {
   // Custom States for Form (not easily managed solely by react-hook-form default schema)
   const [amenities, setAmenities] = useState<string[]>([]);
   const [amenityInput, setAmenityInput] = useState('');
+  const [badges, setBadges] = useState<string[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>(['']);
+  const [imageTab, setImageTab] = useState<'url' | 'upload'>('url');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -91,7 +140,7 @@ export const PropertyForm: React.FC = () => {
     defaultValues: {
       title: '',
       slug: '',
-      locality: 'Tajganj',
+      locality: 'Tajganj, Agra',
       address: '',
       description: '',
       transaction: 'Buy',
@@ -104,7 +153,6 @@ export const PropertyForm: React.FC = () => {
       possession: 'Ready',
       postedBy: 'Agent',
       whatsappNumber: '919837029310',
-      isFeatured: false,
       createdAt: new Date().toISOString().split('T')[0]
     }
   });
@@ -130,11 +178,43 @@ export const PropertyForm: React.FC = () => {
       setValue('possession', existingProperty.possession);
       setValue('postedBy', existingProperty.postedBy);
       setValue('whatsappNumber', existingProperty.whatsappNumber);
-      setValue('isFeatured', existingProperty.isFeatured);
       setValue('createdAt', existingProperty.createdAt);
 
       setAmenities(existingProperty.amenities || []);
+      setBadges((existingProperty.badges || []).filter(b => b !== 'new-listing'));
       setImageUrls(existingProperty.images && existingProperty.images.length > 0 ? existingProperty.images : ['']);
+
+      // Property Features
+      setValue('floorNumber', existingProperty.floorNumber);
+      setValue('totalFloors', existingProperty.totalFloors);
+      setValue('furnishing', existingProperty.furnishing);
+      setValue('ceilingHeight', existingProperty.ceilingHeight);
+      setValue('constructionYear', existingProperty.constructionYear);
+      setValue('renovationStatus', existingProperty.renovationStatus);
+      setValue('additionalSpace', existingProperty.additionalSpace);
+      // Utilities
+      setValue('heating', existingProperty.heating);
+      setValue('airConditioning', existingProperty.airConditioning);
+      setValue('fireplace', existingProperty.fireplace);
+      setValue('elevatorAccess', existingProperty.elevatorAccess);
+      setValue('ventilation', existingProperty.ventilation);
+      setValue('intercom', existingProperty.intercom);
+      setValue('windowModel', existingProperty.windowModel);
+      setValue('cableTV', existingProperty.cableTV);
+      setValue('internetWifi', existingProperty.internetWifi);
+      // Outdoor Features
+      setValue('privateGarage', existingProperty.privateGarage);
+      setValue('gardenBackyard', existingProperty.gardenBackyard);
+      setValue('swimmingPool', existingProperty.swimmingPool);
+      setValue('visitorParking', existingProperty.visitorParking);
+      setValue('disabledAccess', existingProperty.disabledAccess);
+      setValue('fencingBoundary', existingProperty.fencingBoundary);
+      setValue('cctvCameras', existingProperty.cctvCameras);
+      setValue('petFriendly', existingProperty.petFriendly);
+      // Media
+      setValue('videoWalkthroughUrl', existingProperty.videoWalkthroughUrl);
+      setValue('virtualTourUrl', existingProperty.virtualTourUrl);
+      setValue('floorPlanImageUrl', existingProperty.floorPlanImageUrl);
     }
   }, [isEditMode, existingProperty, setValue]);
 
@@ -182,18 +262,24 @@ export const PropertyForm: React.FC = () => {
     }
   };
 
+  const handleToggleBadge = (badge: string) => {
+    setBadges((prev) =>
+      prev.includes(badge) ? prev.filter((b) => b !== badge) : [...prev, badge]
+    );
+  };
+
   // Image inputs interaction
   const handleAddImageUrlInput = () => {
-    if (imageUrls.length < 6) {
+    if (imageUrls.length < 10) {
       setImageUrls((prev) => [...prev, '']);
     } else {
-      showToast('Maximum 6 property images allowed.', 'warning');
+      showToast('Maximum 10 property images allowed.', 'warning');
     }
   };
 
   const handleRemoveImageUrlInput = (index: number) => {
     if (imageUrls.length === 1) {
-      setImageUrls(['']); // Keep at least one empty
+      setImageUrls(['']);
     } else {
       setImageUrls((prev) => prev.filter((_, idx) => idx !== index));
     }
@@ -207,19 +293,68 @@ export const PropertyForm: React.FC = () => {
     });
   };
 
-  // Submit Handler
-  const onSubmit = (data: PropertyFormInputs) => {
-    // Filter out blank images
-    const activeImages = imageUrls.filter((url) => url.trim() !== '');
-    if (activeImages.length === 0) {
-      showToast('Please provide at least 1 visual image URL.', 'warning');
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('File must be under 5 MB.', 'warning');
+      return;
+    }
+    const activeCount = imageUrls.filter((u) => u.trim()).length;
+    if (activeCount >= 10) {
+      showToast('Maximum 10 images allowed.', 'warning');
       return;
     }
 
+    const path = `property-images/${Date.now()}-${file.name}`;
+    const sRef = storageRef(storage, path);
+    const task = uploadBytesResumable(sRef, file);
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    task.on(
+      'state_changed',
+      (snap) => setUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
+      (err) => {
+        console.error(err);
+        showToast('Upload failed. Check Firebase Storage rules.', 'error');
+        setIsUploading(false);
+        setUploadProgress(0);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      },
+      async () => {
+        const url = await getDownloadURL(task.snapshot.ref);
+        setImageUrls((prev) => {
+          const filled = prev.filter((u) => u.trim());
+          return [...filled, url];
+        });
+        showToast('Image uploaded successfully!', 'success');
+        setIsUploading(false);
+        setUploadProgress(0);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    );
+  };
+
+  // Submit Handler
+  const onSubmit = (data: PropertyFormInputs) => {
+    const activeImages = imageUrls.filter((url) => url.trim() !== '');
+    if (activeImages.length === 0) {
+      showToast('Please provide at least 1 image (URL or upload).', 'warning');
+      return;
+    }
+
+    const listingDate = new Date(data.createdAt);
+    const daysSinceListing = (Date.now() - listingDate.getTime()) / (1000 * 60 * 60 * 24);
+    const autoBadges = daysSinceListing <= 30 ? ['new-listing'] : [];
     const compiledPropertyPayload = {
       ...data,
       amenities,
-      images: activeImages
+      images: activeImages,
+      badges: [...badges, ...autoBadges]
     };
 
     startTransition(() => {
@@ -299,22 +434,27 @@ export const PropertyForm: React.FC = () => {
               {errors.slug && <span className="text-[10px] text-red-500 font-semibold">{errors.slug.message}</span>}
             </div>
 
-            {/* Locality dropdown */}
+            {/* Locality combo input */}
             <div className="flex flex-col gap-1.5">
               <label htmlFor="locality-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
                 Agra Locality *
               </label>
-              <select
+              <input
                 id="locality-field"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9] transition-all"
+                type="text"
+                list="locality-options"
+                placeholder="Type or select locality..."
+                className={`w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9] transition-all ${
+                  errors.locality ? 'border-red-500' : 'border-slate-200'
+                }`}
                 {...register('locality', { required: 'Locality assignment is required' })}
-              >
+              />
+              <datalist id="locality-options">
                 {LOCALITY_OPTIONS.map((loc) => (
-                  <option key={loc} value={loc}>
-                    {loc}, Agra
-                  </option>
+                  <option key={loc} value={loc} />
                 ))}
-              </select>
+              </datalist>
+              {errors.locality && <span className="text-[10px] text-red-500 font-semibold">{errors.locality.message}</span>}
             </div>
 
             {/* Full address */}
@@ -572,23 +712,55 @@ export const PropertyForm: React.FC = () => {
               </div>
             </div>
 
-            {/* Is Featured toggle switch */}
-            <div className="flex flex-col gap-1.5 md:col-span-2">
-              <span className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider block">
-                Featured Spotlight Flag
-              </span>
-              <p className="text-xs text-slate-400 leading-none mb-1">
-                Pin this structure onto the homepage sliders and feature highlights
+            {/* Property Badges */}
+            <div className="flex flex-col gap-2 md:col-span-2">
+              <div>
+                <span className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider block">
+                  Property Badges
+                </span>
+                <p className="text-xs text-slate-400 mt-0.5">Select applicable badges to highlight this listing</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1">
+                {([
+                  { key: 'premium', emoji: '🏆', label: 'PREMIUM', desc: 'Mark as premium / luxury property', color: 'peer-checked:border-amber-400 peer-checked:bg-amber-50' },
+                  { key: 'verified', emoji: '✅', label: 'VERIFIED', desc: 'Documents verified by BM Properties', color: 'peer-checked:border-emerald-400 peer-checked:bg-emerald-50' },
+                  { key: 'urgent-sale', emoji: '⚡', label: 'URGENT SALE', desc: 'Urgent sale / price reduced', color: 'peer-checked:border-red-400 peer-checked:bg-red-50' },
+                ] as const).map(({ key, emoji, label, desc, color }) => (
+                  <label
+                    key={key}
+                    className={`relative flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                      badges.includes(key)
+                        ? key === 'premium' ? 'border-amber-400 bg-amber-50'
+                        : key === 'verified' ? 'border-emerald-400 bg-emerald-50'
+                        : 'border-red-400 bg-red-50'
+                        : 'border-slate-200 bg-slate-50 hover:border-slate-300'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={badges.includes(key)}
+                      onChange={() => handleToggleBadge(key)}
+                    />
+                    <span className="text-lg leading-none mt-0.5">{emoji}</span>
+                    <div>
+                      <p className="text-xs font-extrabold text-[#0A1F44] tracking-wide">{label}</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">{desc}</p>
+                    </div>
+                    {badges.includes(key) && (
+                      <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-[#0A1F44] flex items-center justify-center">
+                        <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </span>
+                    )}
+                  </label>
+                ))}
+              </div>
+              <p className="text-[11px] text-slate-400 flex items-center gap-1.5 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+                <span>🆕</span>
+                <span><strong className="text-blue-700">NEW LISTING</strong> badge is added automatically for 30 days after the listing date.</span>
               </p>
-              <label className="flex items-center gap-3 mt-1.5 cursor-pointer max-w-max">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  {...register('isFeatured')}
-                />
-                <div className="relative w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#f59e0b]" />
-                <span className="text-sm font-semibold text-slate-700">Yes, highlight as Featured Spotlight card</span>
-              </label>
             </div>
 
             {/* Tag/Amenity Input */}
@@ -674,65 +846,622 @@ export const PropertyForm: React.FC = () => {
             <h3 className="font-bold text-[#0A1F44] text-base">SECTION 4 — Media Gallery Placement</h3>
           </div>
 
-          <p className="text-xs text-slate-500 leading-snug">
-            Provide direct image URLs from services like Unsplash, Imgur or self-host folders. The admin dashboard renders real-time visual grid indicators for your ease. Up to 6 images may be attached.
-          </p>
+          {/* Tab switcher */}
+          <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit">
+            <button
+              type="button"
+              onClick={() => setImageTab('url')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                imageTab === 'url'
+                  ? 'bg-white text-[#0A1F44] shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <LinkIcon className="w-3.5 h-3.5" />
+              Image URL
+            </button>
+            <button
+              type="button"
+              onClick={() => setImageTab('upload')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                imageTab === 'upload'
+                  ? 'bg-white text-[#0A1F44] shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <FolderOpen className="w-3.5 h-3.5" />
+              Upload File
+            </button>
+          </div>
 
-          <div className="flex flex-col gap-4">
-            {imageUrls.map((url, index) => (
-              <div key={index} className="flex gap-4 items-start">
-                {/* Visual preview box */}
-                <div className="w-16 h-16 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
-                  {url.trim() ? (
+          {/* TAB 1 — Image URL */}
+          {imageTab === 'url' && (
+            <div className="flex flex-col gap-4">
+              <p className="text-xs text-slate-500 leading-snug">
+                Paste direct image links from{' '}
+                <a
+                  href="https://imgbb.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#0ea5e9] font-semibold underline"
+                >
+                  imgbb.com
+                </a>
+                , Google Drive, or any public host. Up to 10 images allowed.
+              </p>
+
+              {imageUrls.map((url, index) => (
+                <div key={index} className="flex gap-3 items-center">
+                  {/* Thumbnail preview */}
+                  <div className="w-14 h-14 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                    {url.trim() ? (
+                      <img
+                        src={url}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <ImageIcon className="w-5 h-5 text-slate-300" />
+                    )}
+                  </div>
+
+                  <input
+                    type="text"
+                    placeholder="Paste image URL from imgbb.com, Google Drive, etc..."
+                    value={url}
+                    onChange={(e) => handleImageUrlChange(index, e.target.value)}
+                    className="flex-1 px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 focus:outline-[#0ea5e9] focus:border-[#0ea5e9]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImageUrlInput(index)}
+                    className="p-2 bg-red-50 hover:bg-red-100 border border-red-200/50 rounded-lg text-red-400 transition-colors flex-shrink-0"
+                    title="Remove"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+
+              {imageUrls.length < 10 && (
+                <button
+                  type="button"
+                  onClick={handleAddImageUrlInput}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-500 border border-dashed border-slate-300 transition-all cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Another Image URL
+                </button>
+              )}
+
+              <p className="text-[11px] text-slate-400 flex items-center gap-1">
+                <span>💡 Tip: Upload to</span>
+                <a
+                  href="https://imgbb.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#0ea5e9] font-semibold underline"
+                >
+                  imgbb.com
+                </a>
+                <span>(free) and paste the direct link here.</span>
+              </p>
+            </div>
+          )}
+
+          {/* TAB 2 — Upload File */}
+          {imageTab === 'upload' && (
+            <div className="flex flex-col gap-4">
+              {/* Upload area */}
+              <div
+                className={`relative border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-3 transition-all ${
+                  isUploading ? 'border-[#0ea5e9] bg-[#0ea5e9]/5' : 'border-slate-300 bg-slate-50 hover:border-[#0ea5e9]/50 hover:bg-[#0ea5e9]/5'
+                }`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                  disabled={isUploading || imageUrls.filter(u => u.trim()).length >= 10}
+                  onChange={handleFileUpload}
+                />
+
+                <CloudUpload className={`w-10 h-10 ${isUploading ? 'text-[#0ea5e9]' : 'text-slate-300'}`} />
+                <div className="text-center pointer-events-none">
+                  <p className="text-sm font-semibold text-[#0A1F44]">
+                    {isUploading ? 'Uploading...' : 'Click to upload or drag and drop'}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">JPG, PNG, WEBP — max 5 MB each</p>
+                </div>
+
+                {isUploading && (
+                  <div className="w-full max-w-xs pointer-events-none">
+                    <div className="flex justify-between text-[10px] text-slate-500 mb-1">
+                      <span>Uploading to Firebase Storage…</span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full bg-slate-200 rounded-full h-1.5">
+                      <div
+                        className="bg-[#0ea5e9] h-1.5 rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <p className="text-[11px] text-slate-400">
+                Files are stored in Firebase Storage and the download URL is added to the image gallery automatically.
+              </p>
+            </div>
+          )}
+
+          {/* Shared image preview grid (shown in both tabs) */}
+          {imageUrls.filter((u) => u.trim()).length > 0 && (
+            <div className="flex flex-col gap-2 border-t border-slate-100 pt-4">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                  Added Images ({imageUrls.filter((u) => u.trim()).length}/10)
+                </p>
+                <p className="text-[10px] text-slate-400">First image used as main property photo</p>
+              </div>
+              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
+                {imageUrls.filter((u) => u.trim()).map((url, i) => (
+                  <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
                     <img
                       src={url}
-                      alt={`Attached preview ${index + 1}`}
+                      alt={`Image ${i + 1}`}
                       className="w-full h-full object-cover"
-                      onError={(e) => {
-                        // fallback broken img placeholder icon
-                        e.currentTarget.style.display = 'none';
-                      }}
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       referrerPolicy="no-referrer"
                     />
-                  ) : (
-                    <ImageIcon className="w-6 h-6 text-slate-350" />
-                  )}
-                </div>
-
-                {/* Input url details */}
-                <div className="flex-1 flex flex-col gap-1">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder={`https://images.unsplash.com/photo-X... Image Link #${index + 1}`}
-                      value={url}
-                      onChange={(e) => handleImageUrlChange(index, e.target.value)}
-                      className="flex-1 px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 focus:outline-[#0ea5e9]"
-                    />
+                    {i === 0 && (
+                      <span className="absolute top-1 left-1 bg-[#0A1F44]/80 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">
+                        MAIN
+                      </span>
+                    )}
                     <button
                       type="button"
-                      onClick={() => handleRemoveImageUrlInput(index)}
-                      className="p-2.5 bg-red-50 hover:bg-red-100 border border-red-200/50 rounded-lg text-[#ef4444] transition-colors"
-                      title="Delete Image Slot"
+                      onClick={() => {
+                        const realIndex = imageUrls.findIndex((u) => u === url);
+                        if (realIndex !== -1) handleRemoveImageUrlInput(realIndex);
+                      }}
+                      className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-3 h-3" />
                     </button>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
+            </div>
+          )}
+        </div>
 
-            {/* Action launcher item */}
-            {imageUrls.length < 6 && (
-              <button
-                type="button"
-                onClick={handleAddImageUrlInput}
-                className="flex items-center justify-center gap-1.5 w-full py-3 bg-slate-100/50 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-650 tracking-wide border border-dashed border-slate-300 transition-all cursor-pointer"
+        {/* SECTION 5 — Property Features */}
+        <div className="bg-white p-6 md:p-8 rounded-xl border border-slate-200/70 shadow-xs flex flex-col gap-5">
+          <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+            <Sparkles className="text-[#8b5cf6] w-5 h-5" />
+            <h3 className="font-bold text-[#0A1F44] text-base">SECTION 5 — Property Features</h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Floor Number */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="floorNumber-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Floor Number
+              </label>
+              <input
+                id="floorNumber-field"
+                type="number"
+                placeholder="e.g. 2"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#8b5cf6]/20 focus:border-[#8b5cf6] transition-all"
+                {...register('floorNumber', { valueAsNumber: true })}
+              />
+            </div>
+
+            {/* Total Floors */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="totalFloors-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Total Floors in Building
+              </label>
+              <input
+                id="totalFloors-field"
+                type="number"
+                placeholder="e.g. 7"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#8b5cf6]/20 focus:border-[#8b5cf6] transition-all"
+                {...register('totalFloors', { valueAsNumber: true })}
+              />
+            </div>
+
+            {/* Furnishing */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="furnishing-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Furnishing Status
+              </label>
+              <select
+                id="furnishing-field"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#8b5cf6]/20 focus:border-[#8b5cf6] transition-all"
+                {...register('furnishing')}
               >
-                <Plus className="w-4 h-4" />
-                <span>Add Image Slot (Limit 6)</span>
-              </button>
-            )}
+                <option value="Unfurnished">Unfurnished</option>
+                <option value="Semi-Furnished">Semi-Furnished</option>
+                <option value="Fully Furnished">Fully Furnished</option>
+              </select>
+            </div>
+
+            {/* Ceiling Height */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="ceilingHeight-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Ceiling Height (in meters)
+              </label>
+              <input
+                id="ceilingHeight-field"
+                type="number"
+                step="0.1"
+                placeholder="e.g. 3.2"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#8b5cf6]/20 focus:border-[#8b5cf6] transition-all"
+                {...register('ceilingHeight', { valueAsNumber: true })}
+              />
+            </div>
+
+            {/* Construction Year */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="constructionYear-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Construction Year
+              </label>
+              <input
+                id="constructionYear-field"
+                type="number"
+                placeholder="e.g. 2022"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#8b5cf6]/20 focus:border-[#8b5cf6] transition-all"
+                {...register('constructionYear', { valueAsNumber: true })}
+              />
+            </div>
+
+            {/* Renovation Status */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="renovationStatus-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Renovation Status
+              </label>
+              <select
+                id="renovationStatus-field"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#8b5cf6]/20 focus:border-[#8b5cf6] transition-all"
+                {...register('renovationStatus')}
+              >
+                <option value="Original">Original</option>
+                <option value="Recent Polish-ups">Recent Polish-ups</option>
+                <option value="Fully Renovated">Fully Renovated</option>
+              </select>
+            </div>
+
+            {/* Additional Space */}
+            <div className="flex flex-col gap-1.5 md:col-span-3">
+              <label htmlFor="additionalSpace-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Additional Space
+              </label>
+              <input
+                id="additionalSpace-field"
+                type="text"
+                placeholder="e.g. Open Terrace / Balcony"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#8b5cf6]/20 focus:border-[#8b5cf6] transition-all"
+                {...register('additionalSpace')}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 6 — Utilities */}
+        <div className="bg-white p-6 md:p-8 rounded-xl border border-slate-200/70 shadow-xs flex flex-col gap-5">
+          <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+            <Zap className="text-[#06b6d4] w-5 h-5" />
+            <h3 className="font-bold text-[#0A1F44] text-base">SECTION 6 — Utilities</h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Heating */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="heating-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Heating
+              </label>
+              <select
+                id="heating-field"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#06b6d4]/20 focus:border-[#06b6d4] transition-all"
+                {...register('heating')}
+              >
+                <option value="Not Applicable">Not Applicable</option>
+                <option value="Central Heating">Central Heating</option>
+                <option value="Gas Heating">Gas Heating</option>
+              </select>
+            </div>
+
+            {/* Air Conditioning */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="airConditioning-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Air Conditioning
+              </label>
+              <select
+                id="airConditioning-field"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#06b6d4]/20 focus:border-[#06b6d4] transition-all"
+                {...register('airConditioning')}
+              >
+                <option value="Not Available">Not Available</option>
+                <option value="Split AC Wiring Ready">Split AC Wiring Ready</option>
+                <option value="Fully Installed">Fully Installed</option>
+              </select>
+            </div>
+
+            {/* Elevator Access */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="elevatorAccess-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Elevator Access
+              </label>
+              <select
+                id="elevatorAccess-field"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#06b6d4]/20 focus:border-[#06b6d4] transition-all"
+                {...register('elevatorAccess')}
+              >
+                <option value="No Elevator">No Elevator</option>
+                <option value="Private Staircase Only">Private Staircase Only</option>
+                <option value="Shared Elevator">Shared Elevator</option>
+                <option value="Private Elevator">Private Elevator</option>
+              </select>
+            </div>
+
+            {/* Ventilation */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="ventilation-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Ventilation
+              </label>
+              <select
+                id="ventilation-field"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#06b6d4]/20 focus:border-[#06b6d4] transition-all"
+                {...register('ventilation')}
+              >
+                <option value="Standard">Standard</option>
+                <option value="Fully Cross Ventilated">Fully Cross Ventilated</option>
+              </select>
+            </div>
+
+            {/* Intercom */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="intercom-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Intercom
+              </label>
+              <select
+                id="intercom-field"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#06b6d4]/20 focus:border-[#06b6d4] transition-all"
+                {...register('intercom')}
+              >
+                <option value="Not Available">Not Available</option>
+                <option value="Gate Ring Doorbell">Gate Ring Doorbell</option>
+                <option value="Full Intercom System">Full Intercom System</option>
+              </select>
+            </div>
+
+            {/* Window Model */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="windowModel-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Window Model
+              </label>
+              <input
+                id="windowModel-field"
+                type="text"
+                placeholder="e.g. Aluminium Glazed Sliding"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#06b6d4]/20 focus:border-[#06b6d4] transition-all"
+                {...register('windowModel')}
+              />
+            </div>
+
+            {/* Cable TV */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="cableTV-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Cable TV
+              </label>
+              <input
+                id="cableTV-field"
+                type="text"
+                placeholder="e.g. SFT Cabling Installed"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#06b6d4]/20 focus:border-[#06b6d4] transition-all"
+                {...register('cableTV')}
+              />
+            </div>
+
+            {/* Internet / WiFi */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="internetWifi-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Internet / WiFi
+              </label>
+              <input
+                id="internetWifi-field"
+                type="text"
+                placeholder="e.g. Agra Jio/Airtel Fiber Covered"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#06b6d4]/20 focus:border-[#06b6d4] transition-all"
+                {...register('internetWifi')}
+              />
+            </div>
+
+            {/* Fireplace Toggle */}
+            <div className="flex flex-col gap-1.5 md:col-span-3">
+              <span className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider block">Fireplace</span>
+              <label className="flex items-center gap-3 mt-1.5 cursor-pointer max-w-max">
+                <input type="checkbox" className="sr-only peer" {...register('fireplace')} />
+                <div className="relative w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#06b6d4]" />
+                <span className="text-sm font-semibold text-slate-700">Yes, property has a Fireplace</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 7 — Outdoor Features */}
+        <div className="bg-white p-6 md:p-8 rounded-xl border border-slate-200/70 shadow-xs flex flex-col gap-5">
+          <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+            <MapPin className="text-[#10b981] w-5 h-5" />
+            <h3 className="font-bold text-[#0A1F44] text-base">SECTION 7 — Outdoor Features</h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Private Garage */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="privateGarage-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Private Garage
+              </label>
+              <input
+                id="privateGarage-field"
+                type="text"
+                placeholder="e.g. Yes (1 Private car space)"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] transition-all"
+                {...register('privateGarage')}
+              />
+            </div>
+
+            {/* Garden / Backyard */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="gardenBackyard-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Garden / Backyard
+              </label>
+              <input
+                id="gardenBackyard-field"
+                type="text"
+                placeholder="e.g. Yes (Shared / Front Yard)"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] transition-all"
+                {...register('gardenBackyard')}
+              />
+            </div>
+
+            {/* Swimming Pool */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="swimmingPool-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Swimming Pool
+              </label>
+              <input
+                id="swimmingPool-field"
+                type="text"
+                placeholder="e.g. Gated Complex Shared Pool"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] transition-all"
+                {...register('swimmingPool')}
+              />
+            </div>
+
+            {/* Visitor Parking */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="visitorParking-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Visitor Parking
+              </label>
+              <input
+                id="visitorParking-field"
+                type="text"
+                placeholder="e.g. 2 Open Visitor Slots"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] transition-all"
+                {...register('visitorParking')}
+              />
+            </div>
+
+            {/* Disabled Access */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="disabledAccess-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Disabled Access
+              </label>
+              <input
+                id="disabledAccess-field"
+                type="text"
+                placeholder="e.g. Ramp + Accessible Washroom"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] transition-all"
+                {...register('disabledAccess')}
+              />
+            </div>
+
+            {/* Fencing Boundary */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="fencingBoundary-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Fencing Boundary
+              </label>
+              <input
+                id="fencingBoundary-field"
+                type="text"
+                placeholder="e.g. Full Brick Boundary Wall"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] transition-all"
+                {...register('fencingBoundary')}
+              />
+            </div>
+
+            {/* CCTV Cameras */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="cctvCameras-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                CCTV Cameras
+              </label>
+              <input
+                id="cctvCameras-field"
+                type="text"
+                placeholder="e.g. CCTV Covered Sector Gate"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] transition-all"
+                {...register('cctvCameras')}
+              />
+            </div>
+
+            {/* Pet Friendly Toggle */}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider block">Pet Friendly</span>
+              <label className="flex items-center gap-3 mt-1.5 cursor-pointer max-w-max">
+                <input type="checkbox" className="sr-only peer" {...register('petFriendly')} />
+                <div className="relative w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#10b981]" />
+                <span className="text-sm font-semibold text-slate-700">Yes, pets are welcome</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 8 — Media */}
+        <div className="bg-white p-6 md:p-8 rounded-xl border border-slate-200/70 shadow-xs flex flex-col gap-5">
+          <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+            <Video className="text-[#f43f5e] w-5 h-5" />
+            <h3 className="font-bold text-[#0A1F44] text-base">SECTION 8 — Media</h3>
+          </div>
+
+          <div className="grid grid-cols-1 gap-5">
+            {/* Video Walkthrough URL */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="videoWalkthroughUrl-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Video Walkthrough URL
+              </label>
+              <input
+                id="videoWalkthroughUrl-field"
+                type="text"
+                placeholder="https://youtube.com/watch?v=..."
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#f43f5e]/20 focus:border-[#f43f5e] transition-all"
+                {...register('videoWalkthroughUrl')}
+              />
+            </div>
+
+            {/* 360 Virtual Tour URL */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="virtualTourUrl-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                360 Virtual Tour URL
+              </label>
+              <input
+                id="virtualTourUrl-field"
+                type="text"
+                placeholder="https://my.matterport.com/show/?m=..."
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#f43f5e]/20 focus:border-[#f43f5e] transition-all"
+                {...register('virtualTourUrl')}
+              />
+            </div>
+
+            {/* Floor Plan Image URL */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="floorPlanImageUrl-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Floor Plan Image URL
+              </label>
+              <input
+                id="floorPlanImageUrl-field"
+                type="text"
+                placeholder="https://example.com/floor-plan.png"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#f43f5e]/20 focus:border-[#f43f5e] transition-all"
+                {...register('floorPlanImageUrl')}
+              />
+            </div>
           </div>
         </div>
 
