@@ -15,7 +15,6 @@ import {
   BarChart3,
   LogOut,
   X,
-  Sparkles,
   Inbox,
   Settings
 } from 'lucide-react';
@@ -33,7 +32,6 @@ const navItems = [
   { name: 'Inquiries', path: '/inquiries', icon: Inbox },
   { name: 'Properties', path: '/properties', icon: Building2 },
   { name: 'Reviews', path: '/reviews', icon: Star },
-  { name: 'Featured Spotlight', path: '/featured-spotlight', icon: Sparkles },
   { name: 'Popular Properties', path: '/popular-properties', icon: Heart },
   { name: 'Testimonials', path: '/testimonials', icon: MessageSquare },
   { name: 'Contact & Info', path: '/contact-info', icon: Phone },

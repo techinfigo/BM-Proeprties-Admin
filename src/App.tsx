@@ -14,11 +14,13 @@ import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Properties } from './pages/Properties';
 import { PropertyForm } from './pages/PropertyForm';
-import { FeaturedSpotlight } from './pages/FeaturedSpotlight';
 import { PopularProperties } from './pages/PopularProperties';
 import { Testimonials } from './pages/Testimonials';
 import { ContactInfo } from './pages/ContactInfo';
 import { SiteStats } from './pages/SiteStats';
+import { Inquiries } from './pages/Inquiries';
+import { SiteSettings } from './pages/SiteSettings';
+import { Reviews } from './pages/Reviews';
 
 export default function App() {
   return (
@@ -35,11 +37,13 @@ export default function App() {
               <Route path="properties" element={<Properties />} />
               <Route path="properties/new" element={<PropertyForm />} />
               <Route path="properties/edit/:id" element={<PropertyForm />} />
-              <Route path="featured-spotlight" element={<FeaturedSpotlight />} />
               <Route path="popular-properties" element={<PopularProperties />} />
               <Route path="testimonials" element={<Testimonials />} />
               <Route path="contact-info" element={<ContactInfo />} />
               <Route path="site-stats" element={<SiteStats />} />
+              <Route path="inquiries" element={<Inquiries />} />
+              <Route path="site-settings" element={<SiteSettings />} />
+              <Route path="reviews" element={<Reviews />} />
             </Route>
 
             {/* Catch-all Route redirect */}
