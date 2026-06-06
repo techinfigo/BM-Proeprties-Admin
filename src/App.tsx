@@ -14,7 +14,6 @@ import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Properties } from './pages/Properties';
 import { PropertyForm } from './pages/PropertyForm';
-import { PopularProperties } from './pages/PopularProperties';
 import { Testimonials } from './pages/Testimonials';
 import { ContactInfo } from './pages/ContactInfo';
 import { SiteStats } from './pages/SiteStats';
@@ -37,7 +36,6 @@ export default function App() {
               <Route path="properties" element={<Properties />} />
               <Route path="properties/new" element={<PropertyForm />} />
               <Route path="properties/edit/:id" element={<PropertyForm />} />
-              <Route path="popular-properties" element={<PopularProperties />} />
               <Route path="testimonials" element={<Testimonials />} />
               <Route path="contact-info" element={<ContactInfo />} />
               <Route path="site-stats" element={<SiteStats />} />

@@ -5,18 +5,17 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import {
-  Property, FeaturedSpotlight, PopularProperty,
+  Property, FeaturedSpotlight,
   Testimonial, ContactInfo, SiteStats
 } from '../types';
 import {
-  initialFeaturedSpotlight, initialPopularProperties,
+  initialFeaturedSpotlight,
   initialContactInfo, initialSiteStats
 } from '../data/mockData';
 
 interface DataContextType {
   properties: Property[];
   featuredSpotlight: FeaturedSpotlight;
-  popularProperties: PopularProperty[];
   testimonials: Testimonial[];
   contactInfo: ContactInfo;
   siteStats: SiteStats;
@@ -25,7 +24,6 @@ interface DataContextType {
   updateProperty: (id: string, property: Partial<Property>) => Promise<void>;
   deleteProperty: (id: string) => Promise<void>;
   updateFeaturedSpotlight: (spotlight: FeaturedSpotlight) => Promise<void>;
-  updatePopularProperties: (properties: PopularProperty[]) => Promise<void>;
   addTestimonial: (testimonial: Omit<Testimonial, 'id'>) => Promise<void>;
   updateTestimonial: (id: string, testimonial: Partial<Testimonial>) => Promise<void>;
   deleteTestimonial: (id: string) => Promise<void>;
@@ -44,7 +42,6 @@ export const useData = () => {
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [featuredSpotlight, setFeaturedSpotlight] = useState<FeaturedSpotlight>(initialFeaturedSpotlight);
-  const [popularProperties, setPopularProperties] = useState<PopularProperty[]>(initialPopularProperties);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [contactInfo, setContactInfo] = useState<ContactInfo>(initialContactInfo);
   const [siteStats, setSiteStats] = useState<SiteStats>(initialSiteStats);
@@ -66,15 +63,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Load single documents
     const loadSingleDocs = async () => {
       try {
-        const [spotSnap, popSnap, contactSnap, statsSnap] = await Promise.all([
+        const [spotSnap, contactSnap, statsSnap] = await Promise.all([
           getDoc(doc(db, 'siteConfig', 'featuredSpotlight')),
-          getDoc(doc(db, 'siteConfig', 'popularProperties')),
           getDoc(doc(db, 'siteConfig', 'contactInfo')),
           getDoc(doc(db, 'siteConfig', 'siteStats')),
         ]);
 
         if (spotSnap.exists()) setFeaturedSpotlight(spotSnap.data() as FeaturedSpotlight);
-        if (popSnap.exists()) setPopularProperties(popSnap.data().items as PopularProperty[]);
         if (contactSnap.exists()) setContactInfo(contactSnap.data() as ContactInfo);
         if (statsSnap.exists()) setSiteStats(statsSnap.data() as SiteStats);
       } catch (err) {
@@ -109,11 +104,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setFeaturedSpotlight(spotlight);
   };
 
-  const updatePopularProperties = async (props: PopularProperty[]) => {
-    await setDoc(doc(db, 'siteConfig', 'popularProperties'), { items: props });
-    setPopularProperties(props);
-  };
-
   const addTestimonial = async (newTest: Omit<Testimonial, 'id'>) => {
     await addDoc(collection(db, 'testimonials'), newTest);
   };
@@ -138,10 +128,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <DataContext.Provider value={{
-      properties, featuredSpotlight, popularProperties,
+      properties, featuredSpotlight,
       testimonials, contactInfo, siteStats, loading,
       addProperty, updateProperty, deleteProperty,
-      updateFeaturedSpotlight, updatePopularProperties,
+      updateFeaturedSpotlight,
       addTestimonial, updateTestimonial, deleteTestimonial,
       updateContactInfo, updateSiteStats
     }}>
