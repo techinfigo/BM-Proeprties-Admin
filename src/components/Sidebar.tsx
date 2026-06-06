@@ -90,19 +90,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       >
         {/* Sidebar Header/Logo */}
         <div className="flex items-center justify-between h-20 px-6 border-b border-slate-700/50">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-[#0ea5e9]/10 text-[#0ea5e9] border border-[#0ea5e9]/20">
-              <Building2 className="w-5.5 h-5.5" />
-            </div>
-            <div>
-              <h1 className="font-bold text-lg tracking-tight leading-none text-white">
-                BM Properties
-              </h1>
-              <span className="text-[10px] font-medium tracking-widest text-[#0ea5e9] uppercase">
-                Agra Admin
-              </span>
-            </div>
-          </div>
+          <img src="/logo.png" alt="BM Properties" style={{ maxHeight: '50px' }} className="object-contain" />
           <button
             onClick={onClose}
             className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors"
