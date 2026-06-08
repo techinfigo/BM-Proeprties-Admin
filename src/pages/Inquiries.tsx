@@ -83,7 +83,7 @@ function formatPrice(val: string | number): string {
 function buildWhatsAppUrl(inquiry: Inquiry): string {
   const name    = pick(inquiry, 'name', 'ownerName', 'fullName') || 'Unknown';
   const phone   = pick(inquiry, 'phone', 'ownerPhone', 'mobile');
-  const subject = pick(inquiry, 'subject', 'propertyType');
+  const subject = pick(inquiry, 'source', 'subject', 'propertyType');
   const msg =
     `Hello, I received an inquiry from *${name}*.\n` +
     (phone   ? `Phone: ${phone}\n`   : '') +
@@ -281,7 +281,7 @@ export const Inquiries: React.FC = () => {
                 <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   <th className="px-4 py-3 text-left">Name</th>
                   <th className="px-4 py-3 text-left">Phone</th>
-                  <th className="px-4 py-3 text-left">Subject / Type</th>
+                  <th className="px-4 py-3 text-left">Source / Subject</th>
                   <th className="px-4 py-3 text-left">Status</th>
                   <th className="px-4 py-3 text-left">Date</th>
                   <th className="px-4 py-3 text-left">Actions</th>
@@ -296,7 +296,7 @@ export const Inquiries: React.FC = () => {
 
                   const displayName    = pick(inquiry, 'name', 'ownerName', 'fullName') || '—';
                   const displayPhone   = pick(inquiry, 'phone', 'ownerPhone', 'mobile') || '—';
-                  const displaySubject = pick(inquiry, 'subject', 'propertyType', 'title') || '—';
+                  const displaySubject = pick(inquiry, 'source', 'subject', 'propertyType', 'title') || '—';
                   const displayDate    = formatDate(inquiry.createdAt ?? inquiry.date) || '—';
 
                   return (
