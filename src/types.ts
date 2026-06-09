@@ -14,6 +14,7 @@ export interface Property {
   type: 'Flat' | 'House' | 'Plot' | 'Commercial';
   price: number;
   priceLabel: string;
+  pricePerSqYard?: number;
   area: number;
   bhk: number;
   facing: 'North' | 'South' | 'East' | 'West';

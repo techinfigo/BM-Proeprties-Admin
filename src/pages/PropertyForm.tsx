@@ -40,6 +40,7 @@ interface PropertyFormInputs {
   type: 'Flat' | 'House' | 'Plot' | 'Commercial';
   price: number;
   priceLabel: string;
+  pricePerSqYard?: number;
   area: number;
   bhk: number;
   facing: 'North' | 'South' | 'East' | 'West';
@@ -147,6 +148,7 @@ export const PropertyForm: React.FC = () => {
       type: 'Flat',
       price: 0,
       priceLabel: '',
+      pricePerSqYard: 0,
       area: 0,
       bhk: 1,
       facing: 'East',
@@ -172,6 +174,7 @@ export const PropertyForm: React.FC = () => {
       setValue('type', existingProperty.type);
       setValue('price', existingProperty.price);
       setValue('priceLabel', existingProperty.priceLabel);
+      setValue('pricePerSqYard', existingProperty.pricePerSqYard ?? 0);
       setValue('area', existingProperty.area);
       setValue('bhk', existingProperty.bhk);
       setValue('facing', existingProperty.facing);
@@ -549,44 +552,111 @@ export const PropertyForm: React.FC = () => {
               </select>
             </div>
 
-            {/* Price (Actual numeric index) */}
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="price-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
-                Actual Numeric Price (in ₹) *
-              </label>
-              <input
-                id="price-field"
-                type="number"
-                placeholder="e.g. 7500000"
-                className={`w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border hover:border-slate-300 focus:outline-[#0ea5e9] ${
-                  errors.price ? 'border-red-500' : 'border-slate-200'
-                }`}
-                {...register('price', {
-                  required: 'Price sum is required',
-                  min: { value: 1, message: 'Price must be greater than zero' }
-                })}
-              />
-              {errors.price && <span className="text-[10px] text-red-500 font-semibold">{errors.price.message}</span>}
-            </div>
+            {/* Price fields — conditional on property type */}
+            {watchedType === 'Plot' ? (
+              <>
+                {/* Total Plot Price */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="price-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                    Total Plot Price (in ₹) *
+                  </label>
+                  <input
+                    id="price-field"
+                    type="number"
+                    placeholder="e.g. 2500000"
+                    className={`w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border hover:border-slate-300 focus:outline-[#0ea5e9] ${
+                      errors.price ? 'border-red-500' : 'border-slate-200'
+                    }`}
+                    {...register('price', {
+                      required: 'Total plot price is required',
+                      min: { value: 1, message: 'Price must be greater than zero' }
+                    })}
+                  />
+                  {errors.price && <span className="text-[10px] text-red-500 font-semibold">{errors.price.message}</span>}
+                </div>
 
-            {/* Price Label (Vocal description) */}
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="priceLabel-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
-                Formatted Price Label *
-              </label>
-              <input
-                id="priceLabel-field"
-                type="text"
-                placeholder="e.g. ₹75 Lakh or ₹15,000 / month"
-                className={`w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border hover:border-slate-300 focus:outline-[#0ea5e9] ${
-                  errors.priceLabel ? 'border-red-500' : 'border-slate-200'
-                }`}
-                {...register('priceLabel', { required: 'Please specify printable price label' })}
-              />
-              {errors.priceLabel && (
-                <span className="text-[10px] text-red-500 font-semibold">{errors.priceLabel.message}</span>
-              )}
-            </div>
+                {/* Formatted Total Price Label */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="priceLabel-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                    Formatted Total Price Label *
+                  </label>
+                  <input
+                    id="priceLabel-field"
+                    type="text"
+                    placeholder="e.g. ₹25 Lakh"
+                    className={`w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border hover:border-slate-300 focus:outline-[#0ea5e9] ${
+                      errors.priceLabel ? 'border-red-500' : 'border-slate-200'
+                    }`}
+                    {...register('priceLabel', { required: 'Please specify formatted total price label' })}
+                  />
+                  {errors.priceLabel && (
+                    <span className="text-[10px] text-red-500 font-semibold">{errors.priceLabel.message}</span>
+                  )}
+                </div>
+
+                {/* Price per Square Yard */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="pricePerSqYard-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                    Price per Square Yard (in ₹) *
+                  </label>
+                  <input
+                    id="pricePerSqYard-field"
+                    type="number"
+                    placeholder="e.g. 2500"
+                    className={`w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border hover:border-slate-300 focus:outline-[#0ea5e9] ${
+                      errors.pricePerSqYard ? 'border-red-500' : 'border-slate-200'
+                    }`}
+                    {...register('pricePerSqYard', {
+                      required: 'Price per square yard is required',
+                      min: { value: 1, message: 'Price per sq. yard must be greater than zero' }
+                    })}
+                  />
+                  <span className="text-[10px] text-slate-400 font-medium">Saved as: ₹2,500/sq.yd format on listing</span>
+                  {errors.pricePerSqYard && <span className="text-[10px] text-red-500 font-semibold">{errors.pricePerSqYard.message}</span>}
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Price (Actual numeric index) */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="price-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                    Actual Numeric Price (in ₹) *
+                  </label>
+                  <input
+                    id="price-field"
+                    type="number"
+                    placeholder="e.g. 7500000"
+                    className={`w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border hover:border-slate-300 focus:outline-[#0ea5e9] ${
+                      errors.price ? 'border-red-500' : 'border-slate-200'
+                    }`}
+                    {...register('price', {
+                      required: 'Price sum is required',
+                      min: { value: 1, message: 'Price must be greater than zero' }
+                    })}
+                  />
+                  {errors.price && <span className="text-[10px] text-red-500 font-semibold">{errors.price.message}</span>}
+                </div>
+
+                {/* Price Label (Vocal description) */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="priceLabel-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                    Formatted Price Label *
+                  </label>
+                  <input
+                    id="priceLabel-field"
+                    type="text"
+                    placeholder="e.g. ₹75 Lakh or ₹15,000 / month"
+                    className={`w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border hover:border-slate-300 focus:outline-[#0ea5e9] ${
+                      errors.priceLabel ? 'border-red-500' : 'border-slate-200'
+                    }`}
+                    {...register('priceLabel', { required: 'Please specify printable price label' })}
+                  />
+                  {errors.priceLabel && (
+                    <span className="text-[10px] text-red-500 font-semibold">{errors.priceLabel.message}</span>
+                  )}
+                </div>
+              </>
+            )}
 
             {/* Space Area in SqFt */}
             <div className="flex flex-col gap-1.5">
