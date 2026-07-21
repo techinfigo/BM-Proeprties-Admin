@@ -1435,11 +1435,11 @@ export const PropertyForm: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => setShowUtilities((prev) => !prev)}
-            className="flex items-center justify-between gap-2 w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg text-sm font-bold text-[#0A1F44] border border-slate-200 transition-all cursor-pointer"
+            onClick={() => setShowUtilities(!showUtilities)}
+            className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] hover:bg-slate-50 transition-colors"
           >
-            <span>{showUtilities ? 'Hide Utility Details' : 'Add Utility Details +'}</span>
             <ChevronDown className={`w-4 h-4 transition-transform ${showUtilities ? 'rotate-180' : ''}`} />
+            <span>{showUtilities ? 'Hide Utility Details' : 'Add Utility Details +'}</span>
           </button>
 
           {showUtilities && (
