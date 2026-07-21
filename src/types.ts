@@ -110,6 +110,16 @@ export interface Property {
   windowModel?: string;
   cableTV?: string;
   internetWifi?: string;
+  // Utilities — show on website toggles
+  showHeating?: boolean;
+  showAirConditioning?: boolean;
+  showFireplace?: boolean;
+  showElevatorAccess?: boolean;
+  showVentilation?: boolean;
+  showIntercom?: boolean;
+  showWindowModel?: boolean;
+  showCableTV?: boolean;
+  showWifi?: boolean;
   // Outdoor Features
   privateGarage?: string;
   gardenBackyard?: string;
