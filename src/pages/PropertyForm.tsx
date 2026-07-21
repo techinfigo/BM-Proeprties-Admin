@@ -588,9 +588,9 @@ export const PropertyForm: React.FC = () => {
                 id="title-field"
                 type="text"
                 placeholder="e.g. Spacious 3 BHK apartment in Fatehabad near Taj"
-                className={`w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9] ${
+                className={`w-full px-4 py-3 border rounded-xl text-sm text-[#0A1F44] focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm ${
                   errors.title ? 'border-red-500' : 'border-slate-200'
-                } transition-all`}
+                }`}
                 {...register('title', { required: 'Listing Title is required' })}
               />
               {errors.title && <span className="text-[10px] text-red-500 font-semibold">{errors.title.message}</span>}
@@ -605,7 +605,7 @@ export const PropertyForm: React.FC = () => {
                 id="project-name-field"
                 type="text"
                 placeholder="e.g. Aerocity, Mehar Kunj, Landmark City"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9] transition-all"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 {...register('projectName')}
               />
             </div>
@@ -619,9 +619,9 @@ export const PropertyForm: React.FC = () => {
                 id="slug-field"
                 type="text"
                 placeholder="e.g. spacious-3-bhk-apartment"
-                className={`w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-slate-500 border hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9] ${
+                className={`w-full px-4 py-3 border rounded-xl text-sm text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm ${
                   errors.slug ? 'border-red-500' : 'border-slate-200'
-                } transition-all`}
+                }`}
                 {...register('slug', { required: 'Slug URL descriptor is required' })}
               />
               {errors.slug && <span className="text-[10px] text-red-500 font-semibold">{errors.slug.message}</span>}
@@ -637,7 +637,7 @@ export const PropertyForm: React.FC = () => {
                 type="text"
                 list="locality-options"
                 placeholder="Type or select locality..."
-                className={`w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9] transition-all ${
+                className={`w-full px-4 py-3 border rounded-xl text-sm text-[#0A1F44] focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm ${
                   errors.locality ? 'border-red-500' : 'border-slate-200'
                 }`}
                 {...register('locality', { required: 'Locality assignment is required' })}
@@ -659,9 +659,9 @@ export const PropertyForm: React.FC = () => {
                 id="address-field"
                 type="text"
                 placeholder="Apartment Number, Colony details, Fatehabad Road, Agra, UP - 282001"
-                className={`w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9] ${
+                className={`w-full px-4 py-3 border rounded-xl text-sm text-[#0A1F44] focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm ${
                   errors.address ? 'border-red-500' : 'border-slate-200'
-                } transition-all`}
+                }`}
                 {...register('address', { required: 'Detailed Address is required' })}
               />
               {errors.address && (
@@ -712,19 +712,22 @@ export const PropertyForm: React.FC = () => {
               <label htmlFor="type-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
                 Structure Classification *
               </label>
-              <select
-                id="type-field"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0ea5e9]/20"
-                {...register('type', { required: true })}
-              >
-                {PROPERTY_TYPE_GROUPS.map((group) => (
-                  <optgroup key={group.label} label={group.label}>
-                    {group.options.map((option) => (
-                      <option key={option} value={option}>{option}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  id="type-field"
+                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
+                  {...register('type', { required: true })}
+                >
+                  {PROPERTY_TYPE_GROUPS.map((group) => (
+                    <optgroup key={group.label} label={group.label}>
+                      {group.options.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
 
             {/* Price fields — conditional on property type */}
@@ -739,7 +742,7 @@ export const PropertyForm: React.FC = () => {
                     id="price-field"
                     type="number"
                     placeholder="e.g. 2500000"
-                    className={`w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border hover:border-slate-300 focus:outline-[#0ea5e9] ${
+                    className={`w-full px-4 py-3 border rounded-xl text-sm text-[#0A1F44] focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm ${
                       errors.price ? 'border-red-500' : 'border-slate-200'
                     }`}
                     {...register('price', {
@@ -759,7 +762,7 @@ export const PropertyForm: React.FC = () => {
                     id="priceLabel-field"
                     type="text"
                     placeholder="e.g. ₹25 Lakh"
-                    className={`w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border hover:border-slate-300 focus:outline-[#0ea5e9] ${
+                    className={`w-full px-4 py-3 border rounded-xl text-sm text-[#0A1F44] focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm ${
                       errors.priceLabel ? 'border-red-500' : 'border-slate-200'
                     }`}
                     {...register('priceLabel', { required: 'Please specify formatted total price label' })}
@@ -778,7 +781,7 @@ export const PropertyForm: React.FC = () => {
                     id="pricePerSqYard-field"
                     type="number"
                     placeholder="e.g. 2500"
-                    className={`w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border hover:border-slate-300 focus:outline-[#0ea5e9] ${
+                    className={`w-full px-4 py-3 border rounded-xl text-sm text-[#0A1F44] focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm ${
                       errors.pricePerSqYard ? 'border-red-500' : 'border-slate-200'
                     }`}
                     {...register('pricePerSqYard', {
@@ -801,7 +804,7 @@ export const PropertyForm: React.FC = () => {
                     id="price-field"
                     type="number"
                     placeholder="e.g. 7500000"
-                    className={`w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border hover:border-slate-300 focus:outline-[#0ea5e9] ${
+                    className={`w-full px-4 py-3 border rounded-xl text-sm text-[#0A1F44] focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm ${
                       errors.price ? 'border-red-500' : 'border-slate-200'
                     }`}
                     {...register('price', {
@@ -821,7 +824,7 @@ export const PropertyForm: React.FC = () => {
                     id="priceLabel-field"
                     type="text"
                     placeholder="e.g. ₹75 Lakh or ₹15,000 / month"
-                    className={`w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border hover:border-slate-300 focus:outline-[#0ea5e9] ${
+                    className={`w-full px-4 py-3 border rounded-xl text-sm text-[#0A1F44] focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm ${
                       errors.priceLabel ? 'border-red-500' : 'border-slate-200'
                     }`}
                     {...register('priceLabel', { required: 'Please specify printable price label' })}
@@ -839,20 +842,23 @@ export const PropertyForm: React.FC = () => {
                 Property Area *
               </label>
               <div className="flex gap-2">
-                <select
-                  id="areaUnit-field"
-                  className="px-3 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9]"
-                  {...register('areaUnit')}
-                >
-                  <option value="Sq. Ft">Sq. Ft</option>
-                  <option value="Sq. Yd">Sq. Yd</option>
-                  <option value="Sq. Mt">Sq. Mt</option>
-                </select>
+                <div className="relative w-32 shrink-0">
+                  <select
+                    id="areaUnit-field"
+                    className="w-full px-4 py-3 pr-9 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
+                    {...register('areaUnit')}
+                  >
+                    <option value="Sq. Ft">Sq. Ft</option>
+                    <option value="Sq. Yd">Sq. Yd</option>
+                    <option value="Sq. Mt">Sq. Mt</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                </div>
                 <input
                   id="area-field"
                   type="number"
                   placeholder="e.g. 1450"
-                  className="flex-1 min-w-0 px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200"
+                  className="flex-1 min-w-0 px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                   {...register('area', { required: 'Total property area is required' })}
                 />
               </div>
@@ -869,7 +875,7 @@ export const PropertyForm: React.FC = () => {
                 type="number"
                 disabled={!RESIDENTIAL_UNIT_TYPES.includes(watchedType)}
                 placeholder="e.g. 3"
-                className="w-full px-4 py-2.5 bg-slate-50 disabled:bg-slate-100 disabled:text-slate-400 rounded-lg text-sm text-[#0A1F44] border border-slate-200"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm disabled:bg-slate-100 disabled:text-slate-400"
                 {...register('bhk', { valueAsNumber: true })}
               />
             </div>
@@ -879,16 +885,19 @@ export const PropertyForm: React.FC = () => {
               <label htmlFor="facing-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
                 Vastu Facing Orientation
               </label>
-              <select
-                id="facing-field"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200"
-                {...register('facing')}
-              >
-                <option value="East">East (Recommended Vastu)</option>
-                <option value="North">North Facing</option>
-                <option value="West">West Facing</option>
-                <option value="South">South Facing</option>
-              </select>
+              <div className="relative">
+                <select
+                  id="facing-field"
+                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
+                  {...register('facing')}
+                >
+                  <option value="East">East (Recommended Vastu)</option>
+                  <option value="North">North Facing</option>
+                  <option value="West">West Facing</option>
+                  <option value="South">South Facing</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
 
             {/* Possession Status */}
@@ -896,14 +905,17 @@ export const PropertyForm: React.FC = () => {
               <label htmlFor="possession-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
                 Possession Status
               </label>
-              <select
-                id="possession-field"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200"
-                {...register('possession')}
-              >
-                <option value="Ready">Ready to Move-in</option>
-                <option value="Under Construction">Under Construction development</option>
-              </select>
+              <div className="relative">
+                <select
+                  id="possession-field"
+                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
+                  {...register('possession')}
+                >
+                  <option value="Ready">Ready to Move-in</option>
+                  <option value="Under Construction">Under Construction development</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
 
             {/* Posted By — fixed, not editable */}
@@ -940,7 +952,9 @@ export const PropertyForm: React.FC = () => {
                   id="whatsappNumber-field"
                   type="text"
                   placeholder="919837029310"
-                  className="w-full pl-9 pr-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200"
+                  className={`w-full pl-9 pr-4 py-3 border rounded-xl text-sm text-[#0A1F44] focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm ${
+                    errors.whatsappNumber ? 'border-red-500' : 'border-slate-200'
+                  }`}
                   {...register('whatsappNumber', { required: 'Inquiry mobile string is required' })}
                 />
               </div>
@@ -958,7 +972,7 @@ export const PropertyForm: React.FC = () => {
                 <input
                   id="createdAt-field"
                   type="date"
-                  className="w-full pl-9 pr-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200"
+                  className="w-full pl-9 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                   {...register('createdAt')}
                 />
               </div>
@@ -1058,7 +1072,7 @@ export const PropertyForm: React.FC = () => {
                       handleAddAmenity();
                     }
                   }}
-                  className="flex-1 px-4 py-2 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 focus:outline-[#0ea5e9]"
+                  className="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-sm text-[#0A1F44] focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 />
                 <button
                   type="button"
@@ -1164,7 +1178,7 @@ export const PropertyForm: React.FC = () => {
                     placeholder="Paste image URL from imgbb.com, Google Drive, etc..."
                     value={url}
                     onChange={(e) => handleImageUrlChange(index, e.target.value)}
-                    className="flex-1 px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 focus:outline-[#0ea5e9] focus:border-[#0ea5e9]"
+                    className="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-sm text-[#0A1F44] focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                   />
                   <button
                     type="button"
@@ -1310,7 +1324,7 @@ export const PropertyForm: React.FC = () => {
                 id="floorNumber-field"
                 type="number"
                 placeholder="e.g. 2"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#8b5cf6]/20 focus:border-[#8b5cf6] transition-all"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 {...register('floorNumber', { valueAsNumber: true })}
               />
             </div>
@@ -1324,7 +1338,7 @@ export const PropertyForm: React.FC = () => {
                 id="totalFloors-field"
                 type="number"
                 placeholder="e.g. 7"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#8b5cf6]/20 focus:border-[#8b5cf6] transition-all"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 {...register('totalFloors', { valueAsNumber: true })}
               />
             </div>
@@ -1334,15 +1348,18 @@ export const PropertyForm: React.FC = () => {
               <label htmlFor="furnishing-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
                 Furnishing Status
               </label>
-              <select
-                id="furnishing-field"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#8b5cf6]/20 focus:border-[#8b5cf6] transition-all"
-                {...register('furnishing')}
-              >
-                <option value="Unfurnished">Unfurnished</option>
-                <option value="Semi-Furnished">Semi-Furnished</option>
-                <option value="Fully Furnished">Fully Furnished</option>
-              </select>
+              <div className="relative">
+                <select
+                  id="furnishing-field"
+                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
+                  {...register('furnishing')}
+                >
+                  <option value="Unfurnished">Unfurnished</option>
+                  <option value="Semi-Furnished">Semi-Furnished</option>
+                  <option value="Fully Furnished">Fully Furnished</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
 
             {/* Ceiling Height */}
@@ -1355,7 +1372,7 @@ export const PropertyForm: React.FC = () => {
                 type="number"
                 step="0.1"
                 placeholder="e.g. 3.2"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#8b5cf6]/20 focus:border-[#8b5cf6] transition-all"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 {...register('ceilingHeight', { valueAsNumber: true })}
               />
             </div>
@@ -1369,7 +1386,7 @@ export const PropertyForm: React.FC = () => {
                 id="constructionYear-field"
                 type="number"
                 placeholder="e.g. 2022"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#8b5cf6]/20 focus:border-[#8b5cf6] transition-all"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 {...register('constructionYear', { valueAsNumber: true })}
               />
             </div>
@@ -1379,15 +1396,18 @@ export const PropertyForm: React.FC = () => {
               <label htmlFor="renovationStatus-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
                 Renovation Status
               </label>
-              <select
-                id="renovationStatus-field"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#8b5cf6]/20 focus:border-[#8b5cf6] transition-all"
-                {...register('renovationStatus')}
-              >
-                <option value="Original">Original</option>
-                <option value="Recent Polish-ups">Recent Polish-ups</option>
-                <option value="Fully Renovated">Fully Renovated</option>
-              </select>
+              <div className="relative">
+                <select
+                  id="renovationStatus-field"
+                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
+                  {...register('renovationStatus')}
+                >
+                  <option value="Original">Original</option>
+                  <option value="Recent Polish-ups">Recent Polish-ups</option>
+                  <option value="Fully Renovated">Fully Renovated</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
 
             {/* Additional Space */}
@@ -1399,7 +1419,7 @@ export const PropertyForm: React.FC = () => {
                 id="additionalSpace-field"
                 type="text"
                 placeholder="e.g. Open Terrace / Balcony"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#8b5cf6]/20 focus:border-[#8b5cf6] transition-all"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 {...register('additionalSpace')}
               />
             </div>
@@ -1429,15 +1449,18 @@ export const PropertyForm: React.FC = () => {
               <label htmlFor="heating-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
                 Heating
               </label>
-              <select
-                id="heating-field"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#06b6d4]/20 focus:border-[#06b6d4] transition-all"
-                {...register('heating')}
-              >
-                <option value="Not Applicable">Not Applicable</option>
-                <option value="Central Heating">Central Heating</option>
-                <option value="Gas Heating">Gas Heating</option>
-              </select>
+              <div className="relative">
+                <select
+                  id="heating-field"
+                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
+                  {...register('heating')}
+                >
+                  <option value="Not Applicable">Not Applicable</option>
+                  <option value="Central Heating">Central Heating</option>
+                  <option value="Gas Heating">Gas Heating</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
 
             {/* Air Conditioning */}
@@ -1445,15 +1468,18 @@ export const PropertyForm: React.FC = () => {
               <label htmlFor="airConditioning-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
                 Air Conditioning
               </label>
-              <select
-                id="airConditioning-field"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#06b6d4]/20 focus:border-[#06b6d4] transition-all"
-                {...register('airConditioning')}
-              >
-                <option value="Not Available">Not Available</option>
-                <option value="Split AC Wiring Ready">Split AC Wiring Ready</option>
-                <option value="Fully Installed">Fully Installed</option>
-              </select>
+              <div className="relative">
+                <select
+                  id="airConditioning-field"
+                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
+                  {...register('airConditioning')}
+                >
+                  <option value="Not Available">Not Available</option>
+                  <option value="Split AC Wiring Ready">Split AC Wiring Ready</option>
+                  <option value="Fully Installed">Fully Installed</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
 
             {/* Elevator Access */}
@@ -1461,16 +1487,19 @@ export const PropertyForm: React.FC = () => {
               <label htmlFor="elevatorAccess-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
                 Elevator Access
               </label>
-              <select
-                id="elevatorAccess-field"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#06b6d4]/20 focus:border-[#06b6d4] transition-all"
-                {...register('elevatorAccess')}
-              >
-                <option value="No Elevator">No Elevator</option>
-                <option value="Private Staircase Only">Private Staircase Only</option>
-                <option value="Shared Elevator">Shared Elevator</option>
-                <option value="Private Elevator">Private Elevator</option>
-              </select>
+              <div className="relative">
+                <select
+                  id="elevatorAccess-field"
+                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
+                  {...register('elevatorAccess')}
+                >
+                  <option value="No Elevator">No Elevator</option>
+                  <option value="Private Staircase Only">Private Staircase Only</option>
+                  <option value="Shared Elevator">Shared Elevator</option>
+                  <option value="Private Elevator">Private Elevator</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
 
             {/* Ventilation */}
@@ -1478,14 +1507,17 @@ export const PropertyForm: React.FC = () => {
               <label htmlFor="ventilation-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
                 Ventilation
               </label>
-              <select
-                id="ventilation-field"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#06b6d4]/20 focus:border-[#06b6d4] transition-all"
-                {...register('ventilation')}
-              >
-                <option value="Standard">Standard</option>
-                <option value="Fully Cross Ventilated">Fully Cross Ventilated</option>
-              </select>
+              <div className="relative">
+                <select
+                  id="ventilation-field"
+                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
+                  {...register('ventilation')}
+                >
+                  <option value="Standard">Standard</option>
+                  <option value="Fully Cross Ventilated">Fully Cross Ventilated</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
 
             {/* Intercom */}
@@ -1493,15 +1525,18 @@ export const PropertyForm: React.FC = () => {
               <label htmlFor="intercom-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
                 Intercom
               </label>
-              <select
-                id="intercom-field"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#06b6d4]/20 focus:border-[#06b6d4] transition-all"
-                {...register('intercom')}
-              >
-                <option value="Not Available">Not Available</option>
-                <option value="Gate Ring Doorbell">Gate Ring Doorbell</option>
-                <option value="Full Intercom System">Full Intercom System</option>
-              </select>
+              <div className="relative">
+                <select
+                  id="intercom-field"
+                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
+                  {...register('intercom')}
+                >
+                  <option value="Not Available">Not Available</option>
+                  <option value="Gate Ring Doorbell">Gate Ring Doorbell</option>
+                  <option value="Full Intercom System">Full Intercom System</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
 
             {/* Window Model */}
@@ -1513,7 +1548,7 @@ export const PropertyForm: React.FC = () => {
                 id="windowModel-field"
                 type="text"
                 placeholder="e.g. Aluminium Glazed Sliding"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#06b6d4]/20 focus:border-[#06b6d4] transition-all"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 {...register('windowModel')}
               />
             </div>
@@ -1527,7 +1562,7 @@ export const PropertyForm: React.FC = () => {
                 id="cableTV-field"
                 type="text"
                 placeholder="e.g. SFT Cabling Installed"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#06b6d4]/20 focus:border-[#06b6d4] transition-all"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 {...register('cableTV')}
               />
             </div>
@@ -1541,7 +1576,7 @@ export const PropertyForm: React.FC = () => {
                 id="internetWifi-field"
                 type="text"
                 placeholder="e.g. Agra Jio/Airtel Fiber Covered"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#06b6d4]/20 focus:border-[#06b6d4] transition-all"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 {...register('internetWifi')}
               />
             </div>
@@ -1576,7 +1611,7 @@ export const PropertyForm: React.FC = () => {
                 id="privateGarage-field"
                 type="text"
                 placeholder="e.g. Yes (1 Private car space)"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] transition-all"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 {...register('privateGarage')}
               />
             </div>
@@ -1590,7 +1625,7 @@ export const PropertyForm: React.FC = () => {
                 id="gardenBackyard-field"
                 type="text"
                 placeholder="e.g. Yes (Shared / Front Yard)"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] transition-all"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 {...register('gardenBackyard')}
               />
             </div>
@@ -1604,7 +1639,7 @@ export const PropertyForm: React.FC = () => {
                 id="swimmingPool-field"
                 type="text"
                 placeholder="e.g. Gated Complex Shared Pool"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] transition-all"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 {...register('swimmingPool')}
               />
             </div>
@@ -1618,7 +1653,7 @@ export const PropertyForm: React.FC = () => {
                 id="visitorParking-field"
                 type="text"
                 placeholder="e.g. 2 Open Visitor Slots"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] transition-all"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 {...register('visitorParking')}
               />
             </div>
@@ -1632,7 +1667,7 @@ export const PropertyForm: React.FC = () => {
                 id="disabledAccess-field"
                 type="text"
                 placeholder="e.g. Ramp + Accessible Washroom"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] transition-all"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 {...register('disabledAccess')}
               />
             </div>
@@ -1646,7 +1681,7 @@ export const PropertyForm: React.FC = () => {
                 id="fencingBoundary-field"
                 type="text"
                 placeholder="e.g. Full Brick Boundary Wall"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] transition-all"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 {...register('fencingBoundary')}
               />
             </div>
@@ -1660,7 +1695,7 @@ export const PropertyForm: React.FC = () => {
                 id="cctvCameras-field"
                 type="text"
                 placeholder="e.g. CCTV Covered Sector Gate"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] transition-all"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 {...register('cctvCameras')}
               />
             </div>
@@ -1694,7 +1729,7 @@ export const PropertyForm: React.FC = () => {
                 id="videoWalkthroughUrl-field"
                 type="text"
                 placeholder="https://youtube.com/watch?v=..."
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#f43f5e]/20 focus:border-[#f43f5e] transition-all"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 {...register('videoWalkthroughUrl')}
               />
             </div>
@@ -1708,7 +1743,7 @@ export const PropertyForm: React.FC = () => {
                 id="virtualTourUrl-field"
                 type="text"
                 placeholder="https://my.matterport.com/show/?m=..."
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#f43f5e]/20 focus:border-[#f43f5e] transition-all"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 {...register('virtualTourUrl')}
               />
             </div>
@@ -1753,7 +1788,7 @@ export const PropertyForm: React.FC = () => {
                   id="floorPlanImageUrl-field"
                   type="text"
                   placeholder="https://example.com/floor-plan.png"
-                  className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#f43f5e]/20 focus:border-[#f43f5e] transition-all"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                   {...register('floorPlanImageUrl')}
                 />
               )}
@@ -1918,35 +1953,38 @@ export const PropertyForm: React.FC = () => {
                 key={index}
                 className="grid grid-cols-1 md:grid-cols-[1fr_1.5fr_1fr_1.5fr_auto] gap-2 items-center p-3 bg-slate-50 rounded-xl border border-slate-100"
               >
-                <select
-                  value={place.category}
-                  onChange={(e) => handleNearbyPlaceChange(index, 'category', e.target.value)}
-                  className="px-3 py-2 bg-white rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] transition-all"
-                >
-                  {NEARBY_CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={place.category}
+                    onChange={(e) => handleNearbyPlaceChange(index, 'category', e.target.value)}
+                    className="w-full px-4 py-3 pr-9 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
+                  >
+                    {NEARBY_CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                </div>
                 <input
                   type="text"
                   placeholder="e.g. St. Martinez School"
                   value={place.name}
                   onChange={(e) => handleNearbyPlaceChange(index, 'name', e.target.value)}
-                  className="px-3 py-2 bg-white rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] transition-all"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 />
                 <input
                   type="text"
                   placeholder="e.g. 1.2 km"
                   value={place.distance}
                   onChange={(e) => handleNearbyPlaceChange(index, 'distance', e.target.value)}
-                  className="px-3 py-2 bg-white rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] transition-all"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 />
                 <input
                   type="text"
                   placeholder="e.g. 5 min walk"
                   value={place.travelNote}
                   onChange={(e) => handleNearbyPlaceChange(index, 'travelNote', e.target.value)}
-                  className="px-3 py-2 bg-white rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] transition-all"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
                 />
                 <button
                   type="button"
