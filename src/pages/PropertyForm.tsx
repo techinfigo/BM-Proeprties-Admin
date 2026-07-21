@@ -744,6 +744,7 @@ export const PropertyForm: React.FC = () => {
                   className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
                   {...register('type', { required: true })}
                 >
+                  <option value="">None (Not visible on website)</option>
                   {PROPERTY_TYPE_GROUPS.map((group) => (
                     <optgroup key={group.label} label={group.label}>
                       {group.options.map((option) => (
@@ -874,6 +875,7 @@ export const PropertyForm: React.FC = () => {
                     className="w-full px-4 py-3 pr-9 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
                     {...register('areaUnit')}
                   >
+                    <option value="">None (Not visible on website)</option>
                     <option value="Sq. Ft">Sq. Ft</option>
                     <option value="Sq. Yd">Sq. Yd</option>
                     <option value="Sq. Mt">Sq. Mt</option>
@@ -917,6 +919,7 @@ export const PropertyForm: React.FC = () => {
                   className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
                   {...register('facing')}
                 >
+                  <option value="">None (Not visible on website)</option>
                   <option value="East">East (Recommended Vastu)</option>
                   <option value="North">North Facing</option>
                   <option value="West">West Facing</option>
@@ -937,6 +940,7 @@ export const PropertyForm: React.FC = () => {
                   className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
                   {...register('possession')}
                 >
+                  <option value="">None (Not visible on website)</option>
                   <option value="Ready">Ready to Move-in</option>
                   <option value="Under Construction">Under Construction development</option>
                 </select>
@@ -1380,6 +1384,7 @@ export const PropertyForm: React.FC = () => {
                   className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
                   {...register('furnishing')}
                 >
+                  <option value="">None (Not visible on website)</option>
                   <option value="Unfurnished">Unfurnished</option>
                   <option value="Semi-Furnished">Semi-Furnished</option>
                   <option value="Fully Furnished">Fully Furnished</option>
@@ -1428,6 +1433,7 @@ export const PropertyForm: React.FC = () => {
                   className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
                   {...register('renovationStatus')}
                 >
+                  <option value="">None (Not visible on website)</option>
                   <option value="Original">Original</option>
                   <option value="Recent Polish-ups">Recent Polish-ups</option>
                   <option value="Fully Renovated">Fully Renovated</option>
@@ -1473,6 +1479,7 @@ export const PropertyForm: React.FC = () => {
                       className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
                       {...register('heating')}
                     >
+                      <option value="">None (Not visible on website)</option>
                       <option value="Not Applicable">Not Applicable</option>
                       <option value="Central Heating">Central Heating</option>
                       <option value="Gas Heating">Gas Heating</option>
@@ -1505,6 +1512,7 @@ export const PropertyForm: React.FC = () => {
                       className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
                       {...register('airConditioning')}
                     >
+                      <option value="">None (Not visible on website)</option>
                       <option value="Not Available">Not Available</option>
                       <option value="Split AC Wiring Ready">Split AC Wiring Ready</option>
                       <option value="Fully Installed">Fully Installed</option>
@@ -1537,6 +1545,7 @@ export const PropertyForm: React.FC = () => {
                       className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
                       {...register('elevatorAccess')}
                     >
+                      <option value="">None (Not visible on website)</option>
                       <option value="No Elevator">No Elevator</option>
                       <option value="Private Staircase Only">Private Staircase Only</option>
                       <option value="Shared Elevator">Shared Elevator</option>
@@ -1570,6 +1579,7 @@ export const PropertyForm: React.FC = () => {
                       className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
                       {...register('ventilation')}
                     >
+                      <option value="">None (Not visible on website)</option>
                       <option value="Standard">Standard</option>
                       <option value="Fully Cross Ventilated">Fully Cross Ventilated</option>
                     </select>
@@ -1601,6 +1611,7 @@ export const PropertyForm: React.FC = () => {
                       className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
                       {...register('intercom')}
                     >
+                      <option value="">None (Not visible on website)</option>
                       <option value="Not Available">Not Available</option>
                       <option value="Gate Ring Doorbell">Gate Ring Doorbell</option>
                       <option value="Full Intercom System">Full Intercom System</option>
@@ -2091,6 +2102,7 @@ export const PropertyForm: React.FC = () => {
                     onChange={(e) => handleNearbyPlaceChange(index, 'category', e.target.value)}
                     className="w-full px-4 py-3 pr-9 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
                   >
+                    <option value="">None (Not visible on website)</option>
                     {NEARBY_CATEGORIES.map((cat) => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
