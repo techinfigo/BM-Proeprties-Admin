@@ -1,5 +1,12 @@
 {
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
   "hosting": {
+    "site": "bm-properties-b8b9e",
     "public": "dist",
     "ignore": [
       "firebase.json",

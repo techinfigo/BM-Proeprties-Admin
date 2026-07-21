@@ -1,0 +1,46 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAdmin() {
+      return request.auth != null;
+    }
+
+    // Property listing photos — public site displays these, only admin panel uploads
+    match /property-images/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /floor-plan-images/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /brochure-pdfs/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /blogs/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /locationCategories/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /testimonial-screenshots/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Deny everything else by default
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

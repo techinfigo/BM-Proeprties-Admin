@@ -6,7 +6,7 @@ import {
 import { db } from '../firebase';
 import {
   Property, FeaturedSpotlight,
-  Testimonial, ContactInfo, SiteStats
+  Testimonial, ContactInfo, SiteStats, BlogPost, LocationCategory
 } from '../types';
 import {
   initialFeaturedSpotlight,
@@ -17,10 +17,12 @@ interface DataContextType {
   properties: Property[];
   featuredSpotlight: FeaturedSpotlight;
   testimonials: Testimonial[];
+  blogs: BlogPost[];
+  locationCategories: LocationCategory[];
   contactInfo: ContactInfo;
   siteStats: SiteStats;
   loading: boolean;
-  addProperty: (property: Omit<Property, 'id' | 'createdAt'>) => Promise<void>;
+  addProperty: (property: Omit<Property, 'id'> & { createdAt?: string }) => Promise<void>;
   updateProperty: (id: string, property: Partial<Property>) => Promise<void>;
   deleteProperty: (id: string) => Promise<void>;
   updateFeaturedSpotlight: (spotlight: FeaturedSpotlight) => Promise<void>;
@@ -29,6 +31,12 @@ interface DataContextType {
   deleteTestimonial: (id: string) => Promise<void>;
   updateContactInfo: (info: ContactInfo) => Promise<void>;
   updateSiteStats: (stats: SiteStats) => Promise<void>;
+  addBlog: (blog: Omit<BlogPost, 'id'>) => Promise<void>;
+  updateBlog: (id: string, blog: Partial<BlogPost>) => Promise<void>;
+  deleteBlog: (id: string) => Promise<void>;
+  addLocationCategory: (cat: Omit<LocationCategory, 'id' | 'createdAt'>) => Promise<void>;
+  updateLocationCategory: (id: string, cat: Partial<LocationCategory>) => Promise<void>;
+  deleteLocationCategory: (id: string) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -43,6 +51,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [properties, setProperties] = useState<Property[]>([]);
   const [featuredSpotlight, setFeaturedSpotlight] = useState<FeaturedSpotlight>(initialFeaturedSpotlight);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [blogs, setBlogs] = useState<BlogPost[]>([]);
+  const [locationCategories, setLocationCategories] = useState<LocationCategory[]>([]);
   const [contactInfo, setContactInfo] = useState<ContactInfo>(initialContactInfo);
   const [siteStats, setSiteStats] = useState<SiteStats>(initialSiteStats);
   const [loading, setLoading] = useState(true);
@@ -58,6 +68,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubTestimonials = onSnapshot(collection(db, 'testimonials'), (snap) => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as Testimonial));
       setTestimonials(data);
+    });
+
+    // Listen to blogs in real-time
+    const unsubBlogs = onSnapshot(collection(db, 'blogs'), (snap) => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as BlogPost));
+      setBlogs(data.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+    });
+
+    // Listen to locationCategories in real-time
+    const unsubLocationCategories = onSnapshot(collection(db, 'locationCategories'), (snap) => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as LocationCategory));
+      setLocationCategories(data.sort((a, b) => a.displayOrder - b.displayOrder));
     });
 
     // Load single documents
@@ -83,11 +105,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       unsubProperties();
       unsubTestimonials();
+      unsubBlogs();
+      unsubLocationCategories();
     };
   }, []);
 
-  const addProperty = async (newProp: Omit<Property, 'id' | 'createdAt'>) => {
-    const createdAt = new Date().toISOString().split('T')[0];
+  const addProperty = async (newProp: Omit<Property, 'id'> & { createdAt?: string }) => {
+    const createdAt = newProp.createdAt || new Date().toISOString().split('T')[0];
     await addDoc(collection(db, 'properties'), { ...newProp, createdAt });
   };
 
@@ -126,14 +150,41 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSiteStats(stats);
   };
 
+  const addBlog = async (newBlog: Omit<BlogPost, 'id'>) => {
+    await addDoc(collection(db, 'blogs'), newBlog);
+  };
+
+  const updateBlog = async (id: string, updatedFields: Partial<BlogPost>) => {
+    await updateDoc(doc(db, 'blogs', id), updatedFields);
+  };
+
+  const deleteBlog = async (id: string) => {
+    await deleteDoc(doc(db, 'blogs', id));
+  };
+
+  const addLocationCategory = async (cat: Omit<LocationCategory, 'id' | 'createdAt'>) => {
+    const createdAt = new Date().toISOString();
+    await addDoc(collection(db, 'locationCategories'), { ...cat, createdAt });
+  };
+
+  const updateLocationCategory = async (id: string, cat: Partial<LocationCategory>) => {
+    await updateDoc(doc(db, 'locationCategories', id), cat);
+  };
+
+  const deleteLocationCategory = async (id: string) => {
+    await deleteDoc(doc(db, 'locationCategories', id));
+  };
+
   return (
     <DataContext.Provider value={{
       properties, featuredSpotlight,
-      testimonials, contactInfo, siteStats, loading,
+      testimonials, blogs, locationCategories, contactInfo, siteStats, loading,
       addProperty, updateProperty, deleteProperty,
       updateFeaturedSpotlight,
       addTestimonial, updateTestimonial, deleteTestimonial,
-      updateContactInfo, updateSiteStats
+      updateContactInfo, updateSiteStats,
+      addBlog, updateBlog, deleteBlog,
+      addLocationCategory, updateLocationCategory, deleteLocationCategory
     }}>
       {children}
     </DataContext.Provider>

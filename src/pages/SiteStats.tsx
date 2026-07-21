@@ -128,7 +128,7 @@ export const SiteStats: React.FC = () => {
                   id="premiumFlatsCount-field"
                   aria-labelledby="premiumFlatsCount-label"
                   type="number"
-                  className="w-full px-3 py-1.5 bg-white rounded-md text-xs border border-slate-200' focus:outline-[#0ea5e9]"
+                  className="w-full px-3 py-1.5 bg-white rounded-md text-xs border border-slate-200 focus:outline-[#0ea5e9]"
                   {...register('premiumFlatsCount', { valueAsNumber: true })}
                 />
               </div>

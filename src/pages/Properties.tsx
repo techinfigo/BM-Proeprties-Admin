@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useData } from '../components/DataProvider';
 import { useToast } from '../components/Toast';
+import { PROPERTY_TYPE_GROUPS } from '../types';
 
 export const Properties: React.FC = () => {
   const navigate = useNavigate();
@@ -175,10 +176,13 @@ export const Properties: React.FC = () => {
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-[#0A1F44] focus:outline-hidden focus:ring-2 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9] transition-all"
             >
               <option value="All">All Categories</option>
-              <option value="Flat">Flats / Apartments</option>
-              <option value="House">Houses / Villas</option>
-              <option value="Plot">Plots / Land</option>
-              <option value="Commercial">Commercial / Offices</option>
+              {PROPERTY_TYPE_GROUPS.map((group) => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.options.map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </optgroup>
+              ))}
             </select>
           </div>
 

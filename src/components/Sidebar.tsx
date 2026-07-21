@@ -15,11 +15,14 @@ import {
   LogOut,
   X,
   Inbox,
-  Settings
+  Settings,
+  BookOpen,
+  MapPin,
+  ClipboardCheck
 } from 'lucide-react';
 import { useToast } from './Toast';
 import { db } from '../firebase';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -32,6 +35,9 @@ const navItems = [
   { name: 'Properties', path: '/properties', icon: Building2 },
   { name: 'Reviews', path: '/reviews', icon: Star },
   { name: 'Testimonials', path: '/testimonials', icon: MessageSquare },
+  { name: 'Testimonial Approvals', path: '/testimonial-approvals', icon: ClipboardCheck },
+  { name: 'Blogs', path: '/blogs', icon: BookOpen },
+  { name: 'Location Categories', path: '/location-categories', icon: MapPin },
   { name: 'Contact & Info', path: '/contact-info', icon: Phone },
   { name: 'Site Stats', path: '/site-stats', icon: BarChart3 },
   { name: 'Site Settings', path: '/site-settings', icon: Settings }
@@ -42,6 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { showToast } = useToast();
   const [pendingCount, setPendingCount] = useState(0);
   const [pendingReviewsCount, setPendingReviewsCount] = useState(0);
+  const [pendingTestimonialApprovalsCount, setPendingTestimonialApprovalsCount] = useState(0);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'inquiries'), (snap) => {
@@ -61,6 +68,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         return s !== 'approved' && s !== 'rejected';
       }).length;
       setPendingReviewsCount(count);
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    const q = query(collection(db, 'testimonial_submissions'), where('status', '==', 'pending'));
+    const unsub = onSnapshot(q, (snap) => {
+      setPendingTestimonialApprovalsCount(snap.size);
     });
     return () => unsub();
   }, []);
@@ -90,7 +105,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       >
         {/* Sidebar Header/Logo */}
         <div className="flex items-center justify-between h-20 px-6 border-b border-slate-700/50">
-          <img src="/logo.png" alt="BM Properties" style={{ maxHeight: '50px' }} className="object-contain" />
+          <div className="bg-white rounded-xl px-3 py-1.5">
+            <img src="/logo_bm_properties.png" alt="BM Properties" className="h-10 w-auto object-contain" />
+          </div>
           <button
             onClick={onClose}
             className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors"
@@ -129,6 +146,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 {item.path === '/reviews' && pendingReviewsCount > 0 && (
                   <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold bg-orange-500 text-white">
                     {pendingReviewsCount}
+                  </span>
+                )}
+                {item.path === '/testimonial-approvals' && pendingTestimonialApprovalsCount > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold bg-purple-500 text-white">
+                    {pendingTestimonialApprovalsCount}
                   </span>
                 )}
               </NavLink>

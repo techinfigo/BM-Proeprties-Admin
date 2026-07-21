@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useRef, useState, useTransition } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import {
@@ -19,6 +19,7 @@ import {
   Smartphone,
   Zap,
   MapPin,
+  ChevronDown,
   Video,
   CloudUpload,
   Link as LinkIcon,
@@ -28,20 +29,21 @@ import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebas
 import { storage } from '../firebase';
 import { useData } from '../components/DataProvider';
 import { useToast } from '../components/Toast';
-import { Property } from '../types';
+import { Property, PropertyType, PROPERTY_TYPE_GROUPS, LAND_PROPERTY_TYPES, RESIDENTIAL_UNIT_TYPES } from '../types';
 
 interface PropertyFormInputs {
   title: string;
+  projectName?: string;
   slug: string;
   locality: string;
   address: string;
-  description: string;
   transaction: 'Buy' | 'Rent';
-  type: 'Flat' | 'House' | 'Plot' | 'Commercial';
+  type: PropertyType;
   price: number;
   priceLabel: string;
   pricePerSqYard?: number;
   area: number;
+  areaUnit: 'Sq. Ft' | 'Sq. Yd' | 'Sq. Mt';
   bhk: number;
   facing: 'North' | 'South' | 'East' | 'West';
   possession: 'Ready' | 'Under Construction';
@@ -79,6 +81,14 @@ interface PropertyFormInputs {
   videoWalkthroughUrl?: string;
   virtualTourUrl?: string;
   floorPlanImageUrl?: string;
+  brochureUrl?: string;
+}
+
+interface NearbyPlace {
+  category: string;
+  name: string;
+  distance: string;
+  travelNote: string;
 }
 
 const COMMON_AMENITIES = [
@@ -89,7 +99,36 @@ const COMMON_AMENITIES = [
   'Swimming Pool',
   'Power Backup',
   'CCTV',
-  'Garden'
+  'Garden',
+  'Club House',
+  'Temple',
+  'Park',
+  'RCC Road',
+  'Water Supply',
+  'Gated Community',
+  'Boundary Wall',
+  'Street Lighting',
+  '24/7 Security',
+  'Fire Safety',
+  'Intercom',
+  'Visitor Parking'
+];
+
+const NEARBY_CATEGORIES = [
+  'School',
+  'Hospital',
+  'Market',
+  'Metro',
+  'Bus Stop',
+  'Airport',
+  'Highway',
+  'Temple',
+  'Park',
+  'University',
+  'Mall',
+  'Bank',
+  'ATM',
+  'Other'
 ];
 
 const LOCALITY_OPTIONS = [
@@ -116,7 +155,7 @@ export const PropertyForm: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { properties, addProperty, updateProperty } = useData();
-  const [isPending, startTransition] = useTransition();
+  const [isSaving, setIsSaving] = useState(false);
 
   const isEditMode = !!id;
   const existingProperty = isEditMode ? properties.find((p) => p.id === id) : undefined;
@@ -125,17 +164,30 @@ export const PropertyForm: React.FC = () => {
   const [amenities, setAmenities] = useState<string[]>([]);
   const [amenityInput, setAmenityInput] = useState('');
   const [badges, setBadges] = useState<string[]>([]);
+  const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
+  const [showUtilities, setShowUtilities] = useState(false);
   const [imageUrls, setImageUrls] = useState<string[]>(['']);
   const [imageTab, setImageTab] = useState<'url' | 'upload'>('url');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingBrochure, setIsUploadingBrochure] = useState(false);
+  const [brochureUploadProgress, setBrochureUploadProgress] = useState(0);
+  const [brochureFileName, setBrochureFileName] = useState('');
+  const brochurePdfInputRef = useRef<HTMLInputElement>(null);
+  const [floorPlanTab, setFloorPlanTab] = useState<'url' | 'upload'>('url');
+  const [isUploadingFloorPlan, setIsUploadingFloorPlan] = useState(false);
+  const [floorPlanUploadProgress, setFloorPlanUploadProgress] = useState(0);
+  const floorPlanFileInputRef = useRef<HTMLInputElement>(null);
+
+  const hasPrefilledRef = useRef<boolean>(false);
 
   const {
     register,
     handleSubmit,
     setValue,
     watch,
+    reset,
     formState: { errors }
   } = useForm<PropertyFormInputs>({
     defaultValues: {
@@ -143,13 +195,13 @@ export const PropertyForm: React.FC = () => {
       slug: '',
       locality: 'Tajganj, Agra',
       address: '',
-      description: '',
       transaction: 'Buy',
-      type: 'Flat',
+      type: 'Flat / Apartment',
       price: 0,
       priceLabel: '',
       pricePerSqYard: 0,
       area: 0,
+      areaUnit: 'Sq. Ft',
       bhk: 1,
       facing: 'East',
       possession: 'Ready',
@@ -160,66 +212,79 @@ export const PropertyForm: React.FC = () => {
   });
 
   const watchedTitle = watch('title');
+  const watchedBrochureUrl = watch('brochureUrl');
+  const watchedFloorPlanImageUrl = watch('floorPlanImageUrl');
+  const watchedBhk = watch('bhk');
 
-  // Pre-fill existing data if editing
+  // Pre-fill existing data if editing — runs once when existingProperty first loads
   useEffect(() => {
-    if (isEditMode && existingProperty) {
-      // Set basic fields
-      setValue('title', existingProperty.title);
-      setValue('slug', existingProperty.slug);
-      setValue('locality', existingProperty.locality);
-      setValue('address', existingProperty.address);
-      setValue('description', existingProperty.description);
-      setValue('transaction', existingProperty.transaction);
-      setValue('type', existingProperty.type);
-      setValue('price', existingProperty.price);
-      setValue('priceLabel', existingProperty.priceLabel);
-      setValue('pricePerSqYard', existingProperty.pricePerSqYard ?? 0);
-      setValue('area', existingProperty.area);
-      setValue('bhk', existingProperty.bhk);
-      setValue('facing', existingProperty.facing);
-      setValue('possession', existingProperty.possession);
-      setValue('postedBy', existingProperty.postedBy);
-      setValue('whatsappNumber', existingProperty.whatsappNumber);
-      setValue('createdAt', existingProperty.createdAt);
+    if (isEditMode && existingProperty && !hasPrefilledRef.current) {
+      hasPrefilledRef.current = true;
+
+      // reset() atomically sets ALL fields including native <select> elements,
+      // which individual setValue() calls cannot reliably do in react-hook-form v7.
+      reset({
+        title: existingProperty.title,
+        projectName: existingProperty.projectName,
+        slug: existingProperty.slug,
+        locality: existingProperty.locality,
+        address: existingProperty.address,
+        transaction: existingProperty.transaction,
+        type: existingProperty.type || 'Flat / Apartment',
+        price: existingProperty.price,
+        priceLabel: existingProperty.priceLabel,
+        pricePerSqYard: existingProperty.pricePerSqYard ?? 0,
+        area: existingProperty.area,
+        areaUnit: existingProperty.areaUnit || 'Sq. Ft',
+        bhk: existingProperty.bhk,
+        facing: existingProperty.facing || 'East',
+        possession: existingProperty.possession || 'Ready',
+        postedBy: existingProperty.postedBy || 'Agent',
+        whatsappNumber: existingProperty.whatsappNumber,
+        createdAt: existingProperty.createdAt,
+        // Property Features
+        floorNumber: existingProperty.floorNumber,
+        totalFloors: existingProperty.totalFloors,
+        furnishing: existingProperty.furnishing,
+        ceilingHeight: existingProperty.ceilingHeight,
+        constructionYear: existingProperty.constructionYear,
+        renovationStatus: existingProperty.renovationStatus,
+        additionalSpace: existingProperty.additionalSpace,
+        // Utilities
+        heating: existingProperty.heating,
+        airConditioning: existingProperty.airConditioning,
+        fireplace: existingProperty.fireplace,
+        elevatorAccess: existingProperty.elevatorAccess,
+        ventilation: existingProperty.ventilation,
+        intercom: existingProperty.intercom,
+        windowModel: existingProperty.windowModel,
+        cableTV: existingProperty.cableTV,
+        internetWifi: existingProperty.internetWifi,
+        // Outdoor Features
+        privateGarage: existingProperty.privateGarage,
+        gardenBackyard: existingProperty.gardenBackyard,
+        swimmingPool: existingProperty.swimmingPool,
+        visitorParking: existingProperty.visitorParking,
+        disabledAccess: existingProperty.disabledAccess,
+        fencingBoundary: existingProperty.fencingBoundary,
+        cctvCameras: existingProperty.cctvCameras,
+        petFriendly: existingProperty.petFriendly,
+        // Media
+        videoWalkthroughUrl: existingProperty.videoWalkthroughUrl,
+        virtualTourUrl: existingProperty.virtualTourUrl,
+        floorPlanImageUrl: existingProperty.floorPlanImageUrl,
+        brochureUrl: existingProperty.brochureUrl,
+      });
 
       setAmenities(existingProperty.amenities || []);
       setBadges((existingProperty.badges || []).filter(b => b !== 'new-listing'));
-      setImageUrls(existingProperty.images && existingProperty.images.length > 0 ? existingProperty.images : ['']);
-
-      // Property Features
-      setValue('floorNumber', existingProperty.floorNumber);
-      setValue('totalFloors', existingProperty.totalFloors);
-      setValue('furnishing', existingProperty.furnishing);
-      setValue('ceilingHeight', existingProperty.ceilingHeight);
-      setValue('constructionYear', existingProperty.constructionYear);
-      setValue('renovationStatus', existingProperty.renovationStatus);
-      setValue('additionalSpace', existingProperty.additionalSpace);
-      // Utilities
-      setValue('heating', existingProperty.heating);
-      setValue('airConditioning', existingProperty.airConditioning);
-      setValue('fireplace', existingProperty.fireplace);
-      setValue('elevatorAccess', existingProperty.elevatorAccess);
-      setValue('ventilation', existingProperty.ventilation);
-      setValue('intercom', existingProperty.intercom);
-      setValue('windowModel', existingProperty.windowModel);
-      setValue('cableTV', existingProperty.cableTV);
-      setValue('internetWifi', existingProperty.internetWifi);
-      // Outdoor Features
-      setValue('privateGarage', existingProperty.privateGarage);
-      setValue('gardenBackyard', existingProperty.gardenBackyard);
-      setValue('swimmingPool', existingProperty.swimmingPool);
-      setValue('visitorParking', existingProperty.visitorParking);
-      setValue('disabledAccess', existingProperty.disabledAccess);
-      setValue('fencingBoundary', existingProperty.fencingBoundary);
-      setValue('cctvCameras', existingProperty.cctvCameras);
-      setValue('petFriendly', existingProperty.petFriendly);
-      // Media
-      setValue('videoWalkthroughUrl', existingProperty.videoWalkthroughUrl);
-      setValue('virtualTourUrl', existingProperty.virtualTourUrl);
-      setValue('floorPlanImageUrl', existingProperty.floorPlanImageUrl);
+      setNearbyPlaces(existingProperty.nearbyPlaces || []);
+      setImageUrls(existingProperty.images?.length > 0 ? existingProperty.images : ['']);
+      if (existingProperty.brochureUrl) {
+        setBrochureFileName('Existing brochure');
+      }
     }
-  }, [isEditMode, existingProperty, setValue]);
+  }, [isEditMode, existingProperty, reset]);
 
   // Auto generate slug from title
   useEffect(() => {
@@ -233,15 +298,15 @@ export const PropertyForm: React.FC = () => {
     }
   }, [watchedTitle, isEditMode, setValue]);
 
-  // Handle auto BHK behavior for Plot/Commercial
+  // Handle auto BHK behavior for non-residential-unit types (plots, offices, institutional, etc.)
   const watchedType = watch('type');
   useEffect(() => {
-    if (watchedType === 'Plot' || watchedType === 'Commercial') {
+    if (!RESIDENTIAL_UNIT_TYPES.includes(watchedType)) {
       setValue('bhk', 0);
-    } else if (watch('bhk') === 0) {
+    } else if (watchedBhk === 0) {
       setValue('bhk', 1);
     }
-  }, [watchedType, setValue, watch]);
+  }, [watchedType, watchedBhk, setValue]);
 
   // Amenities interaction
   const handleAddAmenity = (e?: React.FormEvent) => {
@@ -271,6 +336,23 @@ export const PropertyForm: React.FC = () => {
     );
   };
 
+  // Nearby places interaction
+  const handleAddNearbyPlace = () => {
+    setNearbyPlaces((prev) => [...prev, { category: 'School', name: '', distance: '', travelNote: '' }]);
+  };
+
+  const handleRemoveNearbyPlace = (index: number) => {
+    setNearbyPlaces((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleNearbyPlaceChange = (index: number, field: keyof NearbyPlace, value: string) => {
+    setNearbyPlaces((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
   // Image inputs interaction
   const handleAddImageUrlInput = () => {
     if (imageUrls.length < 10) {
@@ -296,7 +378,101 @@ export const PropertyForm: React.FC = () => {
     });
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const fileArray = Array.from(files);
+    let currentCount = imageUrls.filter((u) => u.trim()).length;
+
+    for (const file of fileArray) {
+      if (file.size > 5 * 1024 * 1024) {
+        showToast(`${file.name}: File must be under 5 MB.`, 'warning');
+        continue;
+      }
+      if (currentCount >= 10) {
+        showToast('Maximum 10 images allowed.', 'warning');
+        break;
+      }
+
+      await new Promise<void>((resolve) => {
+        const path = `property-images/${Date.now()}-${file.name}`;
+        const sRef = storageRef(storage, path);
+        const task = uploadBytesResumable(sRef, file);
+
+        setIsUploading(true);
+        setUploadProgress(0);
+
+        task.on(
+          'state_changed',
+          (snap) => setUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
+          (err) => {
+            console.error(err);
+            showToast('Upload failed. Check Firebase Storage rules.', 'error');
+            setIsUploading(false);
+            setUploadProgress(0);
+            resolve();
+          },
+          async () => {
+            const url = await getDownloadURL(task.snapshot.ref);
+            setImageUrls((prev) => {
+              const filled = prev.filter((u) => u.trim());
+              return [...filled, url];
+            });
+            currentCount++;
+            showToast('Image uploaded successfully!', 'success');
+            setIsUploading(false);
+            setUploadProgress(0);
+            resolve();
+          }
+        );
+      });
+    }
+
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleBrochureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+
+    if (file.size > 20 * 1024 * 1024) {
+      showToast('PDF must be under 20 MB.', 'warning');
+      return;
+    }
+
+    const path = `brochure-pdfs/${Date.now()}-${file.name}`;
+    const sRef = storageRef(storage, path);
+    const task = uploadBytesResumable(sRef, file);
+
+    setIsUploadingBrochure(true);
+    setBrochureUploadProgress(0);
+    setBrochureFileName(file.name);
+
+    task.on(
+      'state_changed',
+      (snap) => setBrochureUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
+      (err) => {
+        console.error(err);
+        showToast('Brochure upload failed. Check Firebase Storage rules.', 'error');
+        setIsUploadingBrochure(false);
+        setBrochureUploadProgress(0);
+        setBrochureFileName('');
+        if (brochurePdfInputRef.current) brochurePdfInputRef.current.value = '';
+      },
+      async () => {
+        const url = await getDownloadURL(task.snapshot.ref);
+        setValue('brochureUrl', url);
+        showToast('Brochure uploaded successfully!', 'success');
+        setIsUploadingBrochure(false);
+        setBrochureUploadProgress(0);
+        if (brochurePdfInputRef.current) brochurePdfInputRef.current.value = '';
+      }
+    );
+  };
+
+  const handleFloorPlanUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     const file = files[0];
@@ -305,45 +481,37 @@ export const PropertyForm: React.FC = () => {
       showToast('File must be under 5 MB.', 'warning');
       return;
     }
-    const activeCount = imageUrls.filter((u) => u.trim()).length;
-    if (activeCount >= 10) {
-      showToast('Maximum 10 images allowed.', 'warning');
-      return;
-    }
 
-    const path = `property-images/${Date.now()}-${file.name}`;
+    const path = `floor-plan-images/${Date.now()}-${file.name}`;
     const sRef = storageRef(storage, path);
     const task = uploadBytesResumable(sRef, file);
 
-    setIsUploading(true);
-    setUploadProgress(0);
+    setIsUploadingFloorPlan(true);
+    setFloorPlanUploadProgress(0);
 
     task.on(
       'state_changed',
-      (snap) => setUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
+      (snap) => setFloorPlanUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
       (err) => {
         console.error(err);
-        showToast('Upload failed. Check Firebase Storage rules.', 'error');
-        setIsUploading(false);
-        setUploadProgress(0);
-        if (fileInputRef.current) fileInputRef.current.value = '';
+        showToast('Floor plan upload failed. Check Firebase Storage rules.', 'error');
+        setIsUploadingFloorPlan(false);
+        setFloorPlanUploadProgress(0);
+        if (floorPlanFileInputRef.current) floorPlanFileInputRef.current.value = '';
       },
       async () => {
         const url = await getDownloadURL(task.snapshot.ref);
-        setImageUrls((prev) => {
-          const filled = prev.filter((u) => u.trim());
-          return [...filled, url];
-        });
-        showToast('Image uploaded successfully!', 'success');
-        setIsUploading(false);
-        setUploadProgress(0);
-        if (fileInputRef.current) fileInputRef.current.value = '';
+        setValue('floorPlanImageUrl', url);
+        showToast('Floor plan uploaded successfully!', 'success');
+        setIsUploadingFloorPlan(false);
+        setFloorPlanUploadProgress(0);
+        if (floorPlanFileInputRef.current) floorPlanFileInputRef.current.value = '';
       }
     );
   };
 
   // Submit Handler
-  const onSubmit = (data: PropertyFormInputs) => {
+  const onSubmit = async (data: PropertyFormInputs) => {
     const activeImages = imageUrls.filter((url) => url.trim() !== '');
     if (activeImages.length === 0) {
       showToast('Please provide at least 1 image (URL or upload).', 'warning');
@@ -356,20 +524,28 @@ export const PropertyForm: React.FC = () => {
     const compiledPropertyPayload = {
       ...data,
       amenities,
+      nearbyPlaces,
       images: activeImages,
       badges: [...badges, ...autoBadges]
     };
 
-    startTransition(() => {
+    setIsSaving(true);
+    try {
       if (isEditMode && id) {
-        updateProperty(id, compiledPropertyPayload);
+        await updateProperty(id, compiledPropertyPayload);
         showToast('Property credentials updated successfully!', 'success');
       } else {
-        addProperty(compiledPropertyPayload);
+        await addProperty(compiledPropertyPayload);
         showToast('New platform listing launched successfully!', 'success');
       }
       navigate('/properties');
-    });
+    } catch (err) {
+      console.error('Failed to save property:', err);
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      showToast(`Failed to save property: ${message}`, 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -418,6 +594,20 @@ export const PropertyForm: React.FC = () => {
                 {...register('title', { required: 'Listing Title is required' })}
               />
               {errors.title && <span className="text-[10px] text-red-500 font-semibold">{errors.title.message}</span>}
+            </div>
+
+            {/* Project Name */}
+            <div className="flex flex-col gap-1.5 md:col-span-2">
+              <label htmlFor="project-name-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Project Name
+              </label>
+              <input
+                id="project-name-field"
+                type="text"
+                placeholder="e.g. Aerocity, Mehar Kunj, Landmark City"
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9] transition-all"
+                {...register('projectName')}
+              />
             </div>
 
             {/* Slug */}
@@ -479,24 +669,6 @@ export const PropertyForm: React.FC = () => {
               )}
             </div>
 
-            {/* Description textarea */}
-            <div className="flex flex-col gap-1.5 md:col-span-2">
-              <label htmlFor="description-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
-                Intense Marketing Description & Context *
-              </label>
-              <textarea
-                id="description-field"
-                rows={5}
-                placeholder="Expose maximum details such as room lighting views, nearby malls, security arrangements, distance from Agra Cantt station or expressway, quality of wood cabinets, flooring properties, etc."
-                className={`w-full px-4 py-3 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9] ${
-                  errors.description ? 'border-red-500' : 'border-slate-200'
-                } transition-all`}
-                {...register('description', { required: 'Item description context is required' })}
-              />
-              {errors.description && (
-                <span className="text-[10px] text-red-500 font-semibold">{errors.description.message}</span>
-              )}
-            </div>
           </div>
         </div>
 
@@ -545,15 +717,18 @@ export const PropertyForm: React.FC = () => {
                 className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0ea5e9]/20"
                 {...register('type', { required: true })}
               >
-                <option value="Flat">Flat / Apartment</option>
-                <option value="House">House / Duplex Villa</option>
-                <option value="Plot">Plot Grid / Land</option>
-                <option value="Commercial">Commercial Shop / Office</option>
+                {PROPERTY_TYPE_GROUPS.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.options.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </optgroup>
+                ))}
               </select>
             </div>
 
             {/* Price fields — conditional on property type */}
-            {watchedType === 'Plot' ? (
+            {LAND_PROPERTY_TYPES.includes(watchedType) ? (
               <>
                 {/* Total Plot Price */}
                 <div className="flex flex-col gap-1.5">
@@ -658,18 +833,29 @@ export const PropertyForm: React.FC = () => {
               </>
             )}
 
-            {/* Space Area in SqFt */}
+            {/* Property Area with unit selector */}
             <div className="flex flex-col gap-1.5">
               <label htmlFor="area-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
-                Gross Area Scope (in SqFt) *
+                Property Area *
               </label>
-              <input
-                id="area-field"
-                type="number"
-                placeholder="e.g. 1450"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200"
-                {...register('area', { required: 'Total property area in feet is required' })}
-              />
+              <div className="flex gap-2">
+                <select
+                  id="areaUnit-field"
+                  className="px-3 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0ea5e9]/20 focus:border-[#0ea5e9]"
+                  {...register('areaUnit')}
+                >
+                  <option value="Sq. Ft">Sq. Ft</option>
+                  <option value="Sq. Yd">Sq. Yd</option>
+                  <option value="Sq. Mt">Sq. Mt</option>
+                </select>
+                <input
+                  id="area-field"
+                  type="number"
+                  placeholder="e.g. 1450"
+                  className="flex-1 min-w-0 px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200"
+                  {...register('area', { required: 'Total property area is required' })}
+                />
+              </div>
               {errors.area && <span className="text-[10px] text-red-500 font-semibold">{errors.area.message}</span>}
             </div>
 
@@ -681,7 +867,7 @@ export const PropertyForm: React.FC = () => {
               <input
                 id="bhk-field"
                 type="number"
-                disabled={watchedType === 'Plot' || watchedType === 'Commercial'}
+                disabled={!RESIDENTIAL_UNIT_TYPES.includes(watchedType)}
                 placeholder="e.g. 3"
                 className="w-full px-4 py-2.5 bg-slate-50 disabled:bg-slate-100 disabled:text-slate-400 rounded-lg text-sm text-[#0A1F44] border border-slate-200"
                 {...register('bhk', { valueAsNumber: true })}
@@ -720,19 +906,15 @@ export const PropertyForm: React.FC = () => {
               </select>
             </div>
 
-            {/* Posted By Broker / Landlord */}
+            {/* Posted By — fixed, not editable */}
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="postedBy-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
-                Listing representative
-              </label>
-              <select
-                id="postedBy-field"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200"
-                {...register('postedBy')}
-              >
-                <option value="Agent">BM Agent Team (Recommended)</option>
-                <option value="Owner">Direct Proprietor / Landlord</option>
-              </select>
+              <span className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Listing Representative
+              </span>
+              <input type="hidden" {...register('postedBy')} />
+              <div className="w-full px-4 py-2.5 bg-slate-100 rounded-lg text-sm text-slate-500 border border-slate-200">
+                BM Properties Team
+              </div>
             </div>
           </div>
         </div>
@@ -1034,6 +1216,7 @@ export const PropertyForm: React.FC = () => {
                   ref={fileInputRef}
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
+                  multiple
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
                   disabled={isUploading || imageUrls.filter(u => u.trim()).length >= 10}
                   onChange={handleFileUpload}
@@ -1230,6 +1413,16 @@ export const PropertyForm: React.FC = () => {
             <h3 className="font-bold text-[#0A1F44] text-base">SECTION 6 — Utilities</h3>
           </div>
 
+          <button
+            type="button"
+            onClick={() => setShowUtilities((prev) => !prev)}
+            className="flex items-center justify-between gap-2 w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg text-sm font-bold text-[#0A1F44] border border-slate-200 transition-all cursor-pointer"
+          >
+            <span>{showUtilities ? 'Hide Utility Details' : 'Add Utility Details +'}</span>
+            <ChevronDown className={`w-4 h-4 transition-transform ${showUtilities ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showUtilities && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {/* Heating */}
             <div className="flex flex-col gap-1.5">
@@ -1363,6 +1556,7 @@ export const PropertyForm: React.FC = () => {
               </label>
             </div>
           </div>
+          )}
         </div>
 
         {/* SECTION 7 — Outdoor Features */}
@@ -1519,19 +1713,251 @@ export const PropertyForm: React.FC = () => {
               />
             </div>
 
-            {/* Floor Plan Image URL */}
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="floorPlanImageUrl-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
-                Floor Plan Image URL
+            {/* Floor Plan Image — two-tab (URL / Upload) */}
+            <div className="flex flex-col gap-3">
+              <label className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Floor Plan Image
               </label>
-              <input
-                id="floorPlanImageUrl-field"
-                type="text"
-                placeholder="https://example.com/floor-plan.png"
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#f43f5e]/20 focus:border-[#f43f5e] transition-all"
-                {...register('floorPlanImageUrl')}
-              />
+
+              {/* Tab switcher */}
+              <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit">
+                <button
+                  type="button"
+                  onClick={() => setFloorPlanTab('url')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                    floorPlanTab === 'url'
+                      ? 'bg-white text-[#0A1F44] shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  <LinkIcon className="w-3.5 h-3.5" />
+                  Image URL
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFloorPlanTab('upload')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                    floorPlanTab === 'upload'
+                      ? 'bg-white text-[#0A1F44] shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  <FolderOpen className="w-3.5 h-3.5" />
+                  Upload File
+                </button>
+              </div>
+
+              {/* TAB 1 — Image URL */}
+              {floorPlanTab === 'url' && (
+                <input
+                  id="floorPlanImageUrl-field"
+                  type="text"
+                  placeholder="https://example.com/floor-plan.png"
+                  className="w-full px-4 py-2.5 bg-slate-50 rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#f43f5e]/20 focus:border-[#f43f5e] transition-all"
+                  {...register('floorPlanImageUrl')}
+                />
+              )}
+
+              {/* TAB 2 — Upload File */}
+              {floorPlanTab === 'upload' && (
+                <div
+                  className={`relative border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-3 transition-all ${
+                    isUploadingFloorPlan
+                      ? 'border-[#f43f5e] bg-[#f43f5e]/5'
+                      : 'border-slate-300 bg-slate-50 hover:border-[#f43f5e]/50 hover:bg-[#f43f5e]/5'
+                  }`}
+                >
+                  <input
+                    ref={floorPlanFileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                    disabled={isUploadingFloorPlan}
+                    onChange={handleFloorPlanUpload}
+                  />
+                  <CloudUpload className={`w-10 h-10 ${isUploadingFloorPlan ? 'text-[#f43f5e]' : 'text-slate-300'}`} />
+                  <div className="text-center pointer-events-none">
+                    <p className="text-sm font-semibold text-[#0A1F44]">
+                      {isUploadingFloorPlan ? 'Uploading...' : 'Click to upload or drag and drop'}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">JPG, PNG, WEBP — max 5 MB</p>
+                  </div>
+                  {isUploadingFloorPlan && (
+                    <div className="w-full max-w-xs pointer-events-none">
+                      <div className="flex justify-between text-[10px] text-slate-500 mb-1">
+                        <span>Uploading to Firebase Storage…</span>
+                        <span>{floorPlanUploadProgress}%</span>
+                      </div>
+                      <div className="w-full bg-slate-200 rounded-full h-1.5">
+                        <div
+                          className="bg-[#f43f5e] h-1.5 rounded-full transition-all duration-300"
+                          style={{ width: `${floorPlanUploadProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Preview — shown in both tabs when a value exists */}
+              {watchedFloorPlanImageUrl && (
+                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <img
+                    src={watchedFloorPlanImageUrl}
+                    alt="Floor plan preview"
+                    className="w-16 h-16 rounded-lg object-cover border border-slate-200 bg-slate-100 shrink-0"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    referrerPolicy="no-referrer"
+                  />
+                  <span className="text-sm text-[#0A1F44] font-medium flex-1 truncate">Floor plan added</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setValue('floorPlanImageUrl', '');
+                      if (floorPlanFileInputRef.current) floorPlanFileInputRef.current.value = '';
+                    }}
+                    className="shrink-0 p-1 hover:bg-red-50 rounded text-slate-400 hover:text-red-500 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
+
+            {/* Brochure PDF Upload */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Brochure PDF
+              </label>
+              <input type="hidden" {...register('brochureUrl')} />
+              {watchedBrochureUrl ? (
+                <div className="flex items-center justify-between gap-3 px-4 py-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FolderOpen className="w-4 h-4 text-[#f43f5e] shrink-0" />
+                    <span className="text-sm text-[#0A1F44] font-medium truncate">{brochureFileName || 'Brochure uploaded'}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setValue('brochureUrl', '');
+                      setBrochureFileName('');
+                      if (brochurePdfInputRef.current) brochurePdfInputRef.current.value = '';
+                    }}
+                    className="shrink-0 p-1 hover:bg-red-50 rounded text-slate-400 hover:text-red-500 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  className={`relative border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all ${
+                    isUploadingBrochure ? 'border-[#f43f5e] bg-[#f43f5e]/5' : 'border-slate-300 bg-slate-50 hover:border-[#f43f5e]/50 hover:bg-[#f43f5e]/5'
+                  }`}
+                >
+                  <input
+                    ref={brochurePdfInputRef}
+                    type="file"
+                    accept="application/pdf"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                    disabled={isUploadingBrochure}
+                    onChange={handleBrochureUpload}
+                  />
+                  <CloudUpload className={`w-8 h-8 ${isUploadingBrochure ? 'text-[#f43f5e]' : 'text-slate-300'}`} />
+                  <div className="text-center pointer-events-none">
+                    <p className="text-sm font-semibold text-[#0A1F44]">
+                      {isUploadingBrochure ? 'Uploading PDF...' : 'Click to upload brochure PDF'}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">PDF only — max 20 MB</p>
+                  </div>
+                  {isUploadingBrochure && (
+                    <div className="w-full max-w-xs pointer-events-none">
+                      <div className="flex justify-between text-[10px] text-slate-500 mb-1">
+                        <span>Uploading to Firebase Storage…</span>
+                        <span>{brochureUploadProgress}%</span>
+                      </div>
+                      <div className="w-full bg-slate-200 rounded-full h-1.5">
+                        <div
+                          className="bg-[#f43f5e] h-1.5 rounded-full transition-all duration-300"
+                          style={{ width: `${brochureUploadProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 9 — Nearby & Distances */}
+        <div className="bg-white p-6 md:p-8 rounded-xl border border-slate-200/70 shadow-xs flex flex-col gap-5">
+          <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+            <MapPin className="text-[#f97316] w-5 h-5" />
+            <h3 className="font-bold text-[#0A1F44] text-base">SECTION 9 — Nearby & Distances</h3>
+          </div>
+
+          <div className="flex items-center justify-between -mt-2">
+            <p className="text-xs text-slate-500">Add nearby landmarks with category, distance, and travel note.</p>
+            <button
+              type="button"
+              onClick={handleAddNearbyPlace}
+              className="flex items-center gap-2 px-4 py-2 bg-[#0A1F44] hover:bg-slate-900 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Nearby Place
+            </button>
+          </div>
+
+          {nearbyPlaces.length === 0 && (
+            <p className="text-xs text-slate-400 italic">No nearby places added yet.</p>
+          )}
+
+          <div className="flex flex-col gap-3">
+            {nearbyPlaces.map((place, index) => (
+              <div
+                key={index}
+                className="grid grid-cols-1 md:grid-cols-[1fr_1.5fr_1fr_1.5fr_auto] gap-2 items-center p-3 bg-slate-50 rounded-xl border border-slate-100"
+              >
+                <select
+                  value={place.category}
+                  onChange={(e) => handleNearbyPlaceChange(index, 'category', e.target.value)}
+                  className="px-3 py-2 bg-white rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] transition-all"
+                >
+                  {NEARBY_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  placeholder="e.g. St. Martinez School"
+                  value={place.name}
+                  onChange={(e) => handleNearbyPlaceChange(index, 'name', e.target.value)}
+                  className="px-3 py-2 bg-white rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] transition-all"
+                />
+                <input
+                  type="text"
+                  placeholder="e.g. 1.2 km"
+                  value={place.distance}
+                  onChange={(e) => handleNearbyPlaceChange(index, 'distance', e.target.value)}
+                  className="px-3 py-2 bg-white rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] transition-all"
+                />
+                <input
+                  type="text"
+                  placeholder="e.g. 5 min walk"
+                  value={place.travelNote}
+                  onChange={(e) => handleNearbyPlaceChange(index, 'travelNote', e.target.value)}
+                  className="px-3 py-2 bg-white rounded-lg text-sm text-[#0A1F44] border border-slate-200 hover:border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316] transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveNearbyPlace(index)}
+                  className="p-2 bg-red-50 hover:bg-red-100 border border-red-200/50 rounded-lg text-red-500 transition-colors flex-shrink-0 justify-self-start"
+                  title="Remove"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -1546,10 +1972,10 @@ export const PropertyForm: React.FC = () => {
           </button>
           <button
             type="submit"
-            disabled={isPending}
+            disabled={isSaving}
             className="px-8 py-3 bg-[#0A1F44] hover:bg-slate-900 border border-[#0A1F44]/20 text-white text-sm font-bold rounded-xl transition-all shadow-md active:scale-98 cursor-pointer disabled:opacity-50"
           >
-            {isPending ? 'Saving...' : isEditMode ? 'Update Property Listing' : 'Publish Property Listing'}
+            {isSaving ? 'Saving...' : isEditMode ? 'Update Property Listing' : 'Publish Property Listing'}
           </button>
         </div>
       </form>
