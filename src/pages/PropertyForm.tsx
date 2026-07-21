@@ -1479,7 +1479,7 @@ export const PropertyForm: React.FC = () => {
                       className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
                       {...register('heating')}
                     >
-                      <option value="">None (Not visible on website)</option>
+                      <option value="">None</option>
                       <option value="Not Applicable">Not Applicable</option>
                       <option value="Central Heating">Central Heating</option>
                       <option value="Gas Heating">Gas Heating</option>
@@ -1512,7 +1512,7 @@ export const PropertyForm: React.FC = () => {
                       className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
                       {...register('airConditioning')}
                     >
-                      <option value="">None (Not visible on website)</option>
+                      <option value="">None</option>
                       <option value="Not Available">Not Available</option>
                       <option value="Split AC Wiring Ready">Split AC Wiring Ready</option>
                       <option value="Fully Installed">Fully Installed</option>
@@ -1545,7 +1545,7 @@ export const PropertyForm: React.FC = () => {
                       className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
                       {...register('elevatorAccess')}
                     >
-                      <option value="">None (Not visible on website)</option>
+                      <option value="">None</option>
                       <option value="No Elevator">No Elevator</option>
                       <option value="Private Staircase Only">Private Staircase Only</option>
                       <option value="Shared Elevator">Shared Elevator</option>
@@ -1579,7 +1579,7 @@ export const PropertyForm: React.FC = () => {
                       className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
                       {...register('ventilation')}
                     >
-                      <option value="">None (Not visible on website)</option>
+                      <option value="">None</option>
                       <option value="Standard">Standard</option>
                       <option value="Fully Cross Ventilated">Fully Cross Ventilated</option>
                     </select>
@@ -1611,7 +1611,7 @@ export const PropertyForm: React.FC = () => {
                       className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
                       {...register('intercom')}
                     >
-                      <option value="">None (Not visible on website)</option>
+                      <option value="">None</option>
                       <option value="Not Available">Not Available</option>
                       <option value="Gate Ring Doorbell">Gate Ring Doorbell</option>
                       <option value="Full Intercom System">Full Intercom System</option>
