@@ -165,7 +165,6 @@ export const PropertyForm: React.FC = () => {
   const [amenityInput, setAmenityInput] = useState('');
   const [badges, setBadges] = useState<string[]>([]);
   const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
-  const [showUtilities, setShowUtilities] = useState(false);
   const [imageUrls, setImageUrls] = useState<string[]>(['']);
   const [imageTab, setImageTab] = useState<'url' | 'upload'>('url');
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -1433,16 +1432,6 @@ export const PropertyForm: React.FC = () => {
             <h3 className="font-bold text-[#0A1F44] text-base">SECTION 6 — Utilities</h3>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setShowUtilities(!showUtilities)}
-            className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] hover:bg-slate-50 transition-colors"
-          >
-            <ChevronDown className={`w-4 h-4 transition-transform ${showUtilities ? 'rotate-180' : ''}`} />
-            <span>{showUtilities ? 'Hide Utility Details' : 'Add Utility Details +'}</span>
-          </button>
-
-          {showUtilities && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {/* Heating */}
             <div className="flex flex-col gap-1.5">
@@ -1452,7 +1441,7 @@ export const PropertyForm: React.FC = () => {
               <div className="relative">
                 <select
                   id="heating-field"
-                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
+                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
                   {...register('heating')}
                 >
                   <option value="Not Applicable">Not Applicable</option>
@@ -1471,7 +1460,7 @@ export const PropertyForm: React.FC = () => {
               <div className="relative">
                 <select
                   id="airConditioning-field"
-                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
+                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
                   {...register('airConditioning')}
                 >
                   <option value="Not Available">Not Available</option>
@@ -1490,7 +1479,7 @@ export const PropertyForm: React.FC = () => {
               <div className="relative">
                 <select
                   id="elevatorAccess-field"
-                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
+                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
                   {...register('elevatorAccess')}
                 >
                   <option value="No Elevator">No Elevator</option>
@@ -1510,7 +1499,7 @@ export const PropertyForm: React.FC = () => {
               <div className="relative">
                 <select
                   id="ventilation-field"
-                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
+                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
                   {...register('ventilation')}
                 >
                   <option value="Standard">Standard</option>
@@ -1528,7 +1517,7 @@ export const PropertyForm: React.FC = () => {
               <div className="relative">
                 <select
                   id="intercom-field"
-                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent appearance-none cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
+                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
                   {...register('intercom')}
                 >
                   <option value="Not Available">Not Available</option>
@@ -1548,7 +1537,7 @@ export const PropertyForm: React.FC = () => {
                 id="windowModel-field"
                 type="text"
                 placeholder="e.g. Aluminium Glazed Sliding"
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] shadow-sm"
                 {...register('windowModel')}
               />
             </div>
@@ -1562,7 +1551,7 @@ export const PropertyForm: React.FC = () => {
                 id="cableTV-field"
                 type="text"
                 placeholder="e.g. SFT Cabling Installed"
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] shadow-sm"
                 {...register('cableTV')}
               />
             </div>
@@ -1576,7 +1565,7 @@ export const PropertyForm: React.FC = () => {
                 id="internetWifi-field"
                 type="text"
                 placeholder="e.g. Agra Jio/Airtel Fiber Covered"
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] shadow-sm"
                 {...register('internetWifi')}
               />
             </div>
@@ -1591,7 +1580,6 @@ export const PropertyForm: React.FC = () => {
               </label>
             </div>
           </div>
-          )}
         </div>
 
         {/* SECTION 7 — Outdoor Features */}
