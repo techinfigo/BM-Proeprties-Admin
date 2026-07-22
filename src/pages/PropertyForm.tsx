@@ -165,15 +165,6 @@ export const PropertyForm: React.FC = () => {
   const [amenityInput, setAmenityInput] = useState('');
   const [badges, setBadges] = useState<string[]>([]);
   const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
-  const [showHeating, setShowHeating] = useState(false);
-  const [showAirConditioning, setShowAirConditioning] = useState(false);
-  const [showFireplace, setShowFireplace] = useState(false);
-  const [showElevatorAccess, setShowElevatorAccess] = useState(false);
-  const [showVentilation, setShowVentilation] = useState(false);
-  const [showIntercom, setShowIntercom] = useState(false);
-  const [showWindowModel, setShowWindowModel] = useState(false);
-  const [showCableTV, setShowCableTV] = useState(false);
-  const [showWifi, setShowWifi] = useState(false);
   const [imageUrls, setImageUrls] = useState<string[]>(['']);
   const [imageTab, setImageTab] = useState<'url' | 'upload'>('url');
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -287,15 +278,6 @@ export const PropertyForm: React.FC = () => {
       setAmenities(existingProperty.amenities || []);
       setBadges((existingProperty.badges || []).filter(b => b !== 'new-listing'));
       setNearbyPlaces(existingProperty.nearbyPlaces || []);
-      setShowHeating(existingProperty.showHeating || false);
-      setShowAirConditioning(existingProperty.showAirConditioning || false);
-      setShowFireplace(existingProperty.showFireplace || false);
-      setShowElevatorAccess(existingProperty.showElevatorAccess || false);
-      setShowVentilation(existingProperty.showVentilation || false);
-      setShowIntercom(existingProperty.showIntercom || false);
-      setShowWindowModel(existingProperty.showWindowModel || false);
-      setShowCableTV(existingProperty.showCableTV || false);
-      setShowWifi(existingProperty.showWifi || false);
       setImageUrls(existingProperty.images?.length > 0 ? existingProperty.images : ['']);
       if (existingProperty.brochureUrl) {
         setBrochureFileName('Existing brochure');
@@ -544,15 +526,6 @@ export const PropertyForm: React.FC = () => {
       nearbyPlaces,
       images: activeImages,
       badges: [...badges, ...autoBadges],
-      showHeating,
-      showAirConditioning,
-      showFireplace,
-      showElevatorAccess,
-      showVentilation,
-      showIntercom,
-      showWindowModel,
-      showCableTV,
-      showWifi
     };
 
     setIsSaving(true);
@@ -1467,271 +1440,154 @@ export const PropertyForm: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {/* Heating */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="heating-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
-                    Heating
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="heating-field"
-                      className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
-                      {...register('heating')}
-                    >
-                      <option value="">None</option>
-                      <option value="Not Applicable">Not Applicable</option>
-                      <option value="Central Heating">Central Heating</option>
-                      <option value="Gas Heating">Gas Heating</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                  </div>
-                </div>
-              </div>
-              <label className="flex items-center gap-2 text-sm text-slate-600 whitespace-nowrap cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showHeating}
-                  onChange={e => setShowHeating(e.target.checked)}
-                  className="w-4 h-4 accent-[#0A1F44]"
-                />
-                Show on website
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="heating-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Heating
               </label>
+              <div className="relative">
+                <select
+                  id="heating-field"
+                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
+                  {...register('heating')}
+                >
+                  <option value="">None</option>
+                  <option value="Not Applicable">Not Applicable</option>
+                  <option value="Central Heating">Central Heating</option>
+                  <option value="Gas Heating">Gas Heating</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
 
             {/* Air Conditioning */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="airConditioning-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
-                    Air Conditioning
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="airConditioning-field"
-                      className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
-                      {...register('airConditioning')}
-                    >
-                      <option value="">None</option>
-                      <option value="Not Available">Not Available</option>
-                      <option value="Split AC Wiring Ready">Split AC Wiring Ready</option>
-                      <option value="Fully Installed">Fully Installed</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                  </div>
-                </div>
-              </div>
-              <label className="flex items-center gap-2 text-sm text-slate-600 whitespace-nowrap cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showAirConditioning}
-                  onChange={e => setShowAirConditioning(e.target.checked)}
-                  className="w-4 h-4 accent-[#0A1F44]"
-                />
-                Show on website
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="airConditioning-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Air Conditioning
               </label>
+              <div className="relative">
+                <select
+                  id="airConditioning-field"
+                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
+                  {...register('airConditioning')}
+                >
+                  <option value="">None</option>
+                  <option value="Not Available">Not Available</option>
+                  <option value="Split AC Wiring Ready">Split AC Wiring Ready</option>
+                  <option value="Fully Installed">Fully Installed</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
 
             {/* Elevator Access */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="elevatorAccess-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
-                    Elevator Access
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="elevatorAccess-field"
-                      className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
-                      {...register('elevatorAccess')}
-                    >
-                      <option value="">None</option>
-                      <option value="No Elevator">No Elevator</option>
-                      <option value="Private Staircase Only">Private Staircase Only</option>
-                      <option value="Shared Elevator">Shared Elevator</option>
-                      <option value="Private Elevator">Private Elevator</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                  </div>
-                </div>
-              </div>
-              <label className="flex items-center gap-2 text-sm text-slate-600 whitespace-nowrap cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showElevatorAccess}
-                  onChange={e => setShowElevatorAccess(e.target.checked)}
-                  className="w-4 h-4 accent-[#0A1F44]"
-                />
-                Show on website
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="elevatorAccess-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Elevator Access
               </label>
+              <div className="relative">
+                <select
+                  id="elevatorAccess-field"
+                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
+                  {...register('elevatorAccess')}
+                >
+                  <option value="">None</option>
+                  <option value="No Elevator">No Elevator</option>
+                  <option value="Private Staircase Only">Private Staircase Only</option>
+                  <option value="Shared Elevator">Shared Elevator</option>
+                  <option value="Private Elevator">Private Elevator</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
 
             {/* Ventilation */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="ventilation-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
-                    Ventilation
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="ventilation-field"
-                      className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
-                      {...register('ventilation')}
-                    >
-                      <option value="">None</option>
-                      <option value="Standard">Standard</option>
-                      <option value="Fully Cross Ventilated">Fully Cross Ventilated</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                  </div>
-                </div>
-              </div>
-              <label className="flex items-center gap-2 text-sm text-slate-600 whitespace-nowrap cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showVentilation}
-                  onChange={e => setShowVentilation(e.target.checked)}
-                  className="w-4 h-4 accent-[#0A1F44]"
-                />
-                Show on website
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="ventilation-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Ventilation
               </label>
+              <div className="relative">
+                <select
+                  id="ventilation-field"
+                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
+                  {...register('ventilation')}
+                >
+                  <option value="">None</option>
+                  <option value="Standard">Standard</option>
+                  <option value="Fully Cross Ventilated">Fully Cross Ventilated</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
 
             {/* Intercom */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="intercom-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
-                    Intercom
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="intercom-field"
-                      className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
-                      {...register('intercom')}
-                    >
-                      <option value="">None</option>
-                      <option value="Not Available">Not Available</option>
-                      <option value="Gate Ring Doorbell">Gate Ring Doorbell</option>
-                      <option value="Full Intercom System">Full Intercom System</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                  </div>
-                </div>
-              </div>
-              <label className="flex items-center gap-2 text-sm text-slate-600 whitespace-nowrap cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showIntercom}
-                  onChange={e => setShowIntercom(e.target.checked)}
-                  className="w-4 h-4 accent-[#0A1F44]"
-                />
-                Show on website
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="intercom-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Intercom
               </label>
+              <div className="relative">
+                <select
+                  id="intercom-field"
+                  className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm font-medium text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#0A1F44] appearance-none cursor-pointer shadow-sm"
+                  {...register('intercom')}
+                >
+                  <option value="">None</option>
+                  <option value="Not Available">Not Available</option>
+                  <option value="Gate Ring Doorbell">Gate Ring Doorbell</option>
+                  <option value="Full Intercom System">Full Intercom System</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
 
             {/* Window Model */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="windowModel-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
-                    Window Model
-                  </label>
-                  <input
-                    id="windowModel-field"
-                    type="text"
-                    placeholder="e.g. Aluminium Glazed Sliding"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] shadow-sm"
-                    {...register('windowModel')}
-                  />
-                </div>
-              </div>
-              <label className="flex items-center gap-2 text-sm text-slate-600 whitespace-nowrap cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showWindowModel}
-                  onChange={e => setShowWindowModel(e.target.checked)}
-                  className="w-4 h-4 accent-[#0A1F44]"
-                />
-                Show on website
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="windowModel-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Window Model
               </label>
+              <input
+                id="windowModel-field"
+                type="text"
+                placeholder="e.g. Aluminium Glazed Sliding"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] shadow-sm"
+                {...register('windowModel')}
+              />
             </div>
 
             {/* Cable TV */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="cableTV-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
-                    Cable TV
-                  </label>
-                  <input
-                    id="cableTV-field"
-                    type="text"
-                    placeholder="e.g. SFT Cabling Installed"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] shadow-sm"
-                    {...register('cableTV')}
-                  />
-                </div>
-              </div>
-              <label className="flex items-center gap-2 text-sm text-slate-600 whitespace-nowrap cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showCableTV}
-                  onChange={e => setShowCableTV(e.target.checked)}
-                  className="w-4 h-4 accent-[#0A1F44]"
-                />
-                Show on website
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="cableTV-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Cable TV
               </label>
+              <input
+                id="cableTV-field"
+                type="text"
+                placeholder="e.g. SFT Cabling Installed"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] shadow-sm"
+                {...register('cableTV')}
+              />
             </div>
 
             {/* Internet / WiFi */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="internetWifi-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
-                    Internet / WiFi
-                  </label>
-                  <input
-                    id="internetWifi-field"
-                    type="text"
-                    placeholder="e.g. Agra Jio/Airtel Fiber Covered"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] shadow-sm"
-                    {...register('internetWifi')}
-                  />
-                </div>
-              </div>
-              <label className="flex items-center gap-2 text-sm text-slate-600 whitespace-nowrap cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showWifi}
-                  onChange={e => setShowWifi(e.target.checked)}
-                  className="w-4 h-4 accent-[#0A1F44]"
-                />
-                Show on website
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="internetWifi-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
+                Internet / WiFi
               </label>
+              <input
+                id="internetWifi-field"
+                type="text"
+                placeholder="e.g. Agra Jio/Airtel Fiber Covered"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1F44] shadow-sm"
+                {...register('internetWifi')}
+              />
             </div>
 
             {/* Fireplace Toggle */}
-            <div className="flex items-center gap-3 md:col-span-3">
-              <div className="flex-1">
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider block">Fireplace</span>
-                  <label className="flex items-center gap-3 mt-1.5 cursor-pointer max-w-max">
-                    <input type="checkbox" className="sr-only peer" {...register('fireplace')} />
-                    <div className="relative w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#06b6d4]" />
-                    <span className="text-sm font-semibold text-slate-700">Yes, property has a Fireplace</span>
-                  </label>
-                </div>
-              </div>
-              <label className="flex items-center gap-2 text-sm text-slate-600 whitespace-nowrap cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showFireplace}
-                  onChange={e => setShowFireplace(e.target.checked)}
-                  className="w-4 h-4 accent-[#0A1F44]"
-                />
-                Show on website
+            <div className="flex flex-col gap-1.5 md:col-span-3">
+              <span className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider block">Fireplace</span>
+              <label className="flex items-center gap-3 mt-1.5 cursor-pointer max-w-max">
+                <input type="checkbox" className="sr-only peer" {...register('fireplace')} />
+                <div className="relative w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#06b6d4]" />
+                <span className="text-sm font-semibold text-slate-700">Yes, property has a Fireplace</span>
               </label>
             </div>
           </div>
