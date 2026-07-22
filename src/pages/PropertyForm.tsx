@@ -518,8 +518,23 @@ export const PropertyForm: React.FC = () => {
     );
   };
 
+  // Fires when react-hook-form blocks submission due to a failed required-field
+  // validation (e.g. Structure Classification or WhatsApp Number left empty). Without
+  // this, handleSubmit silently swallows the click — onSubmit never runs, nothing is
+  // logged, and the admin sees no feedback at all, which looks exactly like "Update
+  // isn't saving."
+  const onInvalid = (formErrors: typeof errors) => {
+    const invalidFields = Object.keys(formErrors);
+    console.error('Form validation failed, submit blocked. Invalid fields:', invalidFields, formErrors);
+    showToast(`Cannot save — please fill required field(s): ${invalidFields.join(', ')}`, 'error');
+  };
+
   // Submit Handler
   const onSubmit = async (data: PropertyFormInputs) => {
+    console.log('Form submitted, isEditMode:', isEditMode);
+    console.log('Property ID:', id);
+    console.log('Form data:', data);
+
     const activeImages = imageUrls.filter((url) => url.trim() !== '');
     if (activeImages.length === 0) {
       showToast('Please provide at least 1 image (URL or upload).', 'warning');
@@ -580,7 +595,7 @@ export const PropertyForm: React.FC = () => {
       </div>
 
       {/* Main Multi-section Form with React Hook Form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-8">
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="flex flex-col gap-8">
         
         {/* SECTION 1 — Basic Info */}
         <div className="bg-white p-6 md:p-8 rounded-xl border border-slate-120/70 shadow-xs flex flex-col gap-5">
@@ -740,6 +755,9 @@ export const PropertyForm: React.FC = () => {
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
+              {errors.type && (
+                <span className="text-[10px] text-red-500 font-semibold">Structure Classification is required</span>
+              )}
             </div>
 
             {/* Price fields — conditional on property type */}
@@ -973,6 +991,9 @@ export const PropertyForm: React.FC = () => {
                   {...register('whatsappNumber', { required: 'Inquiry mobile string is required' })}
                 />
               </div>
+              {errors.whatsappNumber && (
+                <span className="text-[10px] text-red-500 font-semibold">{errors.whatsappNumber.message}</span>
+              )}
             </div>
 
             {/* Created date / datepicker */}
