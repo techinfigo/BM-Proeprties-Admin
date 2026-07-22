@@ -544,6 +544,10 @@ export const PropertyForm: React.FC = () => {
     const listingDate = new Date(data.createdAt);
     const daysSinceListing = (Date.now() - listingDate.getTime()) / (1000 * 60 * 60 * 24);
     const autoBadges = daysSinceListing <= 30 ? ['new-listing'] : [];
+
+    console.log('nearbyPlaces at save time:', nearbyPlaces);
+    console.log('nearbyPlaces length:', nearbyPlaces.length);
+
     const compiledPropertyPayload = {
       ...data,
       areaUnit: data.areaUnit || 'Sq. Ft',
@@ -554,6 +558,7 @@ export const PropertyForm: React.FC = () => {
     };
 
     console.log('Saving property data:', compiledPropertyPayload);
+    console.log('nearbyPlaces field in payload:', compiledPropertyPayload.nearbyPlaces);
 
     setIsSaving(true);
     try {
