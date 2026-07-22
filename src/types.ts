@@ -14,6 +14,8 @@ export type PropertyType =
   | 'Office Space'
   | 'Retail Shop / Showroom'
   | 'Hospitality (Hotel/Resort)'
+  | 'Institutional'
+  | 'School/College Campus Land'
   | 'Industrial Plot / Land'
   | 'Factory / Warehouse'
   | 'School / College Campus'
@@ -38,7 +40,9 @@ export const PROPERTY_TYPE_GROUPS: { label: string; options: PropertyType[] }[] 
       'Commercial Plot / Land',
       'Office Space',
       'Retail Shop / Showroom',
-      'Hospitality (Hotel/Resort)'
+      'Hospitality (Hotel/Resort)',
+      'Institutional',
+      'School/College Campus Land'
     ]
   },
   {
