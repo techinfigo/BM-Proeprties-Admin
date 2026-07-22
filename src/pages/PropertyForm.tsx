@@ -179,7 +179,12 @@ export const PropertyForm: React.FC = () => {
   const [floorPlanUploadProgress, setFloorPlanUploadProgress] = useState(0);
   const floorPlanFileInputRef = useRef<HTMLInputElement>(null);
 
-  const hasPrefilledRef = useRef<boolean>(false);
+  // Tracks which property id was last loaded into the form — not just a one-shot
+  // boolean — because /properties/edit/:id reuses the same PropertyForm instance
+  // across different ids (React Router doesn't remount on param-only changes), so a
+  // boolean flag would leave the PREVIOUS property's data in the form when switching
+  // straight from editing one property to editing another.
+  const prefilledIdRef = useRef<string | undefined>(undefined);
 
   const {
     register,
@@ -217,8 +222,8 @@ export const PropertyForm: React.FC = () => {
 
   // Pre-fill existing data if editing — runs once when existingProperty first loads
   useEffect(() => {
-    if (isEditMode && existingProperty && !hasPrefilledRef.current) {
-      hasPrefilledRef.current = true;
+    if (isEditMode && existingProperty && prefilledIdRef.current !== existingProperty.id) {
+      prefilledIdRef.current = existingProperty.id;
 
       // reset() atomically sets ALL fields including native <select> elements,
       // which individual setValue() calls cannot reliably do in react-hook-form v7.
@@ -275,9 +280,13 @@ export const PropertyForm: React.FC = () => {
         brochureUrl: existingProperty.brochureUrl,
       });
 
-      setAmenities(existingProperty.amenities || []);
+      setAmenities(Array.isArray(existingProperty.amenities) ? existingProperty.amenities : []);
       setBadges((existingProperty.badges || []).filter(b => b !== 'new-listing'));
-      setNearbyPlaces(existingProperty.nearbyPlaces || []);
+      if (existingProperty.nearbyPlaces && Array.isArray(existingProperty.nearbyPlaces)) {
+        setNearbyPlaces(existingProperty.nearbyPlaces);
+      } else {
+        setNearbyPlaces([]);
+      }
       setImageUrls(existingProperty.images?.length > 0 ? existingProperty.images : ['']);
       if (existingProperty.brochureUrl) {
         setBrochureFileName('Existing brochure');
@@ -522,11 +531,14 @@ export const PropertyForm: React.FC = () => {
     const autoBadges = daysSinceListing <= 30 ? ['new-listing'] : [];
     const compiledPropertyPayload = {
       ...data,
+      areaUnit: data.areaUnit || 'Sq. Ft',
       amenities,
       nearbyPlaces,
       images: activeImages,
       badges: [...badges, ...autoBadges],
     };
+
+    console.log('Saving property data:', compiledPropertyPayload);
 
     setIsSaving(true);
     try {
