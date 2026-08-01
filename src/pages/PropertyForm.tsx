@@ -23,13 +23,60 @@ import {
   Video,
   CloudUpload,
   Link as LinkIcon,
-  FolderOpen
+  FolderOpen,
+  RefreshCw
 } from 'lucide-react';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { storage } from '../firebase';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { storage, db } from '../firebase';
 import { useData } from '../components/DataProvider';
 import { useToast } from '../components/Toast';
 import { Property, PropertyType, PROPERTY_TYPE_GROUPS, LAND_PROPERTY_TYPES, RESIDENTIAL_UNIT_TYPES } from '../types';
+
+// Last-resort suffix if all -2..-99 numbered variants of a slug are somehow
+// already taken — practically never hit, but keeps findUniqueSlug() total.
+function randomSlugSuffix(length = 4): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let out = '';
+  for (let i = 0; i < length; i++) {
+    out += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return out;
+}
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '') // remove special chars
+    .replace(/\s+/g, '-') // replace spaces with hyphens
+    .replace(/-+/g, '-') // trim double hyphens
+    .replace(/^-|-$/g, ''); // trim leading/trailing hyphens
+}
+
+// SEO-friendly base slug built from the property's type, locality, area and
+// price — e.g. "flat-apartment-tajganj-agra-1200-sq-ft-5000000".
+function buildBaseSeoSlug(type: string, locality: string, area: number, areaUnit: string, price: number): string {
+  const parts = [
+    type,
+    locality,
+    area ? `${area} ${areaUnit}` : '',
+    price ? `${price}` : ''
+  ].filter(Boolean);
+  return slugify(parts.join(' '));
+}
+
+// Checks Firestore for the given slug, and if it's taken, tries numbered
+// variants (-2, -3, ... -99) until a free one is found. `excludeId` lets an
+// edit-in-progress property match against its own existing slug.
+async function findUniqueSlug(baseSlug: string, excludeId?: string): Promise<string> {
+  for (let n = 1; n <= 99; n++) {
+    const candidate = n === 1 ? baseSlug : `${baseSlug}-${n}`;
+    const snap = await getDocs(query(collection(db, 'properties'), where('slug', '==', candidate)));
+    const taken = snap.docs.some((docSnap) => docSnap.id !== excludeId);
+    if (!taken) return candidate;
+  }
+  return `${baseSlug}-${randomSlugSuffix()}`;
+}
 
 interface PropertyFormInputs {
   title: string;
@@ -186,6 +233,11 @@ export const PropertyForm: React.FC = () => {
   // straight from editing one property to editing another.
   const prefilledIdRef = useRef<string | undefined>(undefined);
 
+  // Once the user types directly into the slug field, stop overwriting it
+  // with auto-generated values — their edit wins until they hit Regenerate.
+  const slugManuallyEditedRef = useRef(false);
+  const [isCheckingSlug, setIsCheckingSlug] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -215,10 +267,14 @@ export const PropertyForm: React.FC = () => {
     }
   });
 
-  const watchedTitle = watch('title');
   const watchedBrochureUrl = watch('brochureUrl');
   const watchedFloorPlanImageUrl = watch('floorPlanImageUrl');
   const watchedBhk = watch('bhk');
+  const watchedType = watch('type');
+  const watchedLocality = watch('locality');
+  const watchedArea = watch('area');
+  const watchedAreaUnit = watch('areaUnit');
+  const watchedPrice = watch('price');
 
   // Pre-fill existing data if editing — runs once when existingProperty first loads
   useEffect(() => {
@@ -294,20 +350,37 @@ export const PropertyForm: React.FC = () => {
     }
   }, [isEditMode, existingProperty, reset]);
 
-  // Auto generate slug from title
+  // Auto-generate an SEO-friendly slug from type + locality + area + price,
+  // debounced so rapid edits to the area/price fields don't fire a Firestore
+  // query per keystroke. Only runs for new listings, and stops once the user
+  // has manually edited the slug field themselves.
   useEffect(() => {
-    if (!isEditMode && watchedTitle) {
-      const slug = watchedTitle
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '') // remove special chars
-        .replace(/\s+/g, '-') // replace spaces with hyphens
-        .replace(/-+/g, '-'); // trim double hyphens
-      setValue('slug', slug);
-    }
-  }, [watchedTitle, isEditMode, setValue]);
+    if (isEditMode || slugManuallyEditedRef.current) return;
+    const baseSlug = buildBaseSeoSlug(watchedType, watchedLocality, watchedArea, watchedAreaUnit, watchedPrice);
+    if (!baseSlug) return;
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setIsCheckingSlug(true);
+      try {
+        const uniqueSlug = await findUniqueSlug(baseSlug);
+        if (!cancelled && !slugManuallyEditedRef.current) {
+          setValue('slug', uniqueSlug);
+        }
+      } catch (err) {
+        console.error('Failed to auto-generate a unique slug:', err);
+      } finally {
+        if (!cancelled) setIsCheckingSlug(false);
+      }
+    }, 600);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [watchedType, watchedLocality, watchedArea, watchedAreaUnit, watchedPrice, isEditMode, setValue]);
 
   // Handle auto BHK behavior for non-residential-unit types (plots, offices, institutional, etc.)
-  const watchedType = watch('type');
   useEffect(() => {
     if (!RESIDENTIAL_UNIT_TYPES.includes(watchedType)) {
       setValue('bhk', 0);
@@ -315,6 +388,27 @@ export const PropertyForm: React.FC = () => {
       setValue('bhk', 1);
     }
   }, [watchedType, watchedBhk, setValue]);
+
+  // Rebuilds the slug from the current type/locality/area/price fields and
+  // re-checks Firestore for uniqueness, overriding any manual edit.
+  const handleRegenerateSlug = async () => {
+    const baseSlug = buildBaseSeoSlug(watchedType, watchedLocality, watchedArea, watchedAreaUnit, watchedPrice);
+    if (!baseSlug) {
+      showToast('Fill in property type, locality, area and price first.', 'warning');
+      return;
+    }
+    slugManuallyEditedRef.current = false;
+    setIsCheckingSlug(true);
+    try {
+      const uniqueSlug = await findUniqueSlug(baseSlug, isEditMode ? id : undefined);
+      setValue('slug', uniqueSlug);
+    } catch (err) {
+      console.error('Failed to regenerate slug:', err);
+      showToast('Could not regenerate slug — please try again.', 'error');
+    } finally {
+      setIsCheckingSlug(false);
+    }
+  };
 
   // Amenities interaction
   const handleAddAmenity = (e?: React.FormEvent) => {
@@ -548,20 +642,29 @@ export const PropertyForm: React.FC = () => {
     console.log('nearbyPlaces at save time:', nearbyPlaces);
     console.log('nearbyPlaces length:', nearbyPlaces.length);
 
-    const compiledPropertyPayload = {
-      ...data,
-      areaUnit: data.areaUnit || 'Sq. Ft',
-      amenities,
-      nearbyPlaces,
-      images: activeImages,
-      badges: [...badges, ...autoBadges],
-    };
-
-    console.log('Saving property data:', compiledPropertyPayload);
-    console.log('nearbyPlaces field in payload:', compiledPropertyPayload.nearbyPlaces);
-
     setIsSaving(true);
     try {
+      // Final bulletproof gate: re-verify against Firestore right before writing,
+      // in case the slug shown in the field went stale (another admin claimed it,
+      // or the user hand-typed a slug that was never checked).
+      const finalSlug = await findUniqueSlug(data.slug.trim(), isEditMode ? id : undefined);
+      if (finalSlug !== data.slug) {
+        setValue('slug', finalSlug);
+      }
+
+      const compiledPropertyPayload = {
+        ...data,
+        slug: finalSlug,
+        areaUnit: data.areaUnit || 'Sq. Ft',
+        amenities,
+        nearbyPlaces,
+        images: activeImages,
+        badges: [...badges, ...autoBadges],
+      };
+
+      console.log('Saving property data:', compiledPropertyPayload);
+      console.log('nearbyPlaces field in payload:', compiledPropertyPayload.nearbyPlaces);
+
       if (isEditMode && id) {
         await updateProperty(id, compiledPropertyPayload);
         showToast('Property credentials updated successfully!', 'success');
@@ -578,6 +681,10 @@ export const PropertyForm: React.FC = () => {
       setIsSaving(false);
     }
   };
+
+  // Registered separately (not inline in JSX) so we can wrap onChange to mark
+  // the slug as manually edited without fighting react-hook-form's own handler.
+  const slugFieldRegistration = register('slug', { required: 'Slug URL descriptor is required' });
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto">
@@ -646,16 +753,37 @@ export const PropertyForm: React.FC = () => {
               <label htmlFor="slug-field" className="text-xs font-bold text-[#0A1F44] uppercase tracking-wider">
                 Permanent Slug URL Link *
               </label>
-              <input
-                id="slug-field"
-                type="text"
-                placeholder="e.g. spacious-3-bhk-apartment"
-                className={`w-full px-4 py-3 border rounded-xl text-sm text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm ${
-                  errors.slug ? 'border-red-500' : 'border-slate-200'
-                }`}
-                {...register('slug', { required: 'Slug URL descriptor is required' })}
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  id="slug-field"
+                  type="text"
+                  placeholder="e.g. spacious-3-bhk-apartment"
+                  className={`w-full px-4 py-3 border rounded-xl text-sm text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0A1F44] focus:border-transparent shadow-sm ${
+                    errors.slug ? 'border-red-500' : 'border-slate-200'
+                  }`}
+                  {...slugFieldRegistration}
+                  onChange={(e) => {
+                    slugManuallyEditedRef.current = true;
+                    slugFieldRegistration.onChange(e);
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleRegenerateSlug}
+                  disabled={isCheckingSlug}
+                  title="Regenerate slug from type, locality, area and price"
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-3 border border-slate-200 rounded-xl text-xs font-semibold text-[#0A1F44] hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isCheckingSlug ? 'animate-spin' : ''}`} />
+                  Regenerate Slug
+                </button>
+              </div>
               {errors.slug && <span className="text-[10px] text-red-500 font-semibold">{errors.slug.message}</span>}
+              <span className="text-[10px] text-slate-400">
+                {isCheckingSlug
+                  ? 'Checking availability…'
+                  : 'This URL is unique and SEO friendly. You can edit it manually if needed.'}
+              </span>
             </div>
 
             {/* Locality combo input */}
