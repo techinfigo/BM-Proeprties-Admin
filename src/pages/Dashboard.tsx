@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useData } from '../components/DataProvider';
 import { useToast } from '../components/Toast';
+import { formatPriceLabel } from '../utils/formatPrice';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -199,7 +200,7 @@ export const Dashboard: React.FC = () => {
                     <td className="px-6 py-4 text-emerald-600 font-bold">
                       <div className="flex items-center gap-0.5 text-xs text-[#10b981]">
                         <IndianRupee className="w-3.5 h-3.5" />
-                        <span>{prop.priceLabel}</span>
+                        <span>{formatPriceLabel(prop.priceLabel)}</span>
                       </div>
                     </td>
                     {/* Status badge showing features */}

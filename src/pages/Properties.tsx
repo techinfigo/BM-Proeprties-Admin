@@ -24,6 +24,7 @@ import {
 import { useData } from '../components/DataProvider';
 import { useToast } from '../components/Toast';
 import { PROPERTY_TYPE_GROUPS } from '../types';
+import { formatPriceLabel } from '../utils/formatPrice';
 
 export const Properties: React.FC = () => {
   const navigate = useNavigate();
@@ -364,7 +365,7 @@ export const Properties: React.FC = () => {
 
                         {/* Price — formatted label only */}
                         <td className="px-4 py-3">
-                          <span className="text-xs font-extrabold text-[#10b981] whitespace-nowrap">{prop.priceLabel}</span>
+                          <span className="text-xs font-extrabold text-[#10b981] whitespace-nowrap">{formatPriceLabel(prop.priceLabel)}</span>
                         </td>
 
                         {/* Badges */}
