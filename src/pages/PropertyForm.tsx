@@ -630,10 +630,6 @@ export const PropertyForm: React.FC = () => {
     console.log('Form data:', data);
 
     const activeImages = imageUrls.filter((url) => url.trim() !== '');
-    if (activeImages.length === 0) {
-      showToast('Please provide at least 1 image (URL or upload).', 'warning');
-      return;
-    }
 
     const listingDate = new Date(data.createdAt);
     const daysSinceListing = (Date.now() - listingDate.getTime()) / (1000 * 60 * 60 * 24);

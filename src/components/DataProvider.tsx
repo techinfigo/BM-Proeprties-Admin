@@ -39,6 +39,13 @@ interface DataContextType {
   deleteLocationCategory: (id: string) => Promise<void>;
 }
 
+// Firestore rejects writes containing an explicit `undefined` field value
+// (throws "Unsupported field value: undefined"). Form data routinely carries
+// undefined for optional fields that were never filled in, so every write
+// path needs to strip those keys before hitting addDoc/updateDoc.
+const stripUndefined = <T extends Record<string, unknown>>(obj: T): T =>
+  Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as T;
+
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const useData = () => {
@@ -112,11 +119,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addProperty = async (newProp: Omit<Property, 'id'> & { createdAt?: string }) => {
     const createdAt = newProp.createdAt || new Date().toISOString().split('T')[0];
-    await addDoc(collection(db, 'properties'), { ...newProp, createdAt });
+    await addDoc(collection(db, 'properties'), stripUndefined({ ...newProp, createdAt }));
   };
 
   const updateProperty = async (id: string, updatedFields: Partial<Property>) => {
-    await updateDoc(doc(db, 'properties', id), updatedFields);
+    await updateDoc(doc(db, 'properties', id), stripUndefined(updatedFields));
   };
 
   const deleteProperty = async (id: string) => {
